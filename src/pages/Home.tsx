@@ -11,6 +11,7 @@ interface Blog {
   featured_image: string | null;
   published_at: string;
   content: string;
+  serial_number: number;
   categories: {
     id: number;
     name: string;
@@ -34,6 +35,7 @@ const Home = () => {
           featured_image,
           published_at,
           content,
+          serial_number,
           categories (
             id,
             name,
@@ -90,6 +92,7 @@ const Home = () => {
                 featuredImage={blog.featured_image || undefined}
                 publishedAt={blog.published_at}
                 excerpt={blog.content.substring(0, 150)}
+                serialNumber={blog.serial_number}
               />
             ))}
           </div>

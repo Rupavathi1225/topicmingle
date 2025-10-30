@@ -37,6 +37,7 @@ interface Blog {
   featured_image: string | null;
   status: string;
   published_at: string;
+  serial_number: number;
 }
 
 const Admin = () => {
@@ -315,6 +316,7 @@ const Admin = () => {
             <table className="w-full">
               <thead className="border-b">
                 <tr>
+                  <th className="text-left p-4 font-semibold">Serial #</th>
                   <th className="text-left p-4 font-semibold">Title</th>
                   <th className="text-left p-4 font-semibold">Author</th>
                   <th className="text-left p-4 font-semibold">Status</th>
@@ -324,6 +326,11 @@ const Admin = () => {
               <tbody>
                 {blogs.map((blog) => (
                   <tr key={blog.id} className="border-b last:border-0">
+                    <td className="p-4">
+                      <span className="px-2 py-1 bg-accent/10 text-accent text-xs font-bold rounded">
+                        #{blog.serial_number}
+                      </span>
+                    </td>
                     <td className="p-4">{blog.title}</td>
                     <td className="p-4">{blog.author}</td>
                     <td className="p-4">

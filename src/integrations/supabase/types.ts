@@ -23,6 +23,7 @@ export type Database = {
           featured_image: string | null
           id: string
           published_at: string | null
+          serial_number: number
           slug: string
           status: string | null
           title: string
@@ -36,6 +37,7 @@ export type Database = {
           featured_image?: string | null
           id?: string
           published_at?: string | null
+          serial_number?: number
           slug: string
           status?: string | null
           title: string
@@ -49,6 +51,7 @@ export type Database = {
           featured_image?: string | null
           id?: string
           published_at?: string | null
+          serial_number?: number
           slug?: string
           status?: string | null
           title?: string
