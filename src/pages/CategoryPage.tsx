@@ -1,0 +1,118 @@
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import Navbar from "@/components/Navbar";
+import BlogCard from "@/components/BlogCard";
+
+interface Blog {
+  id: string;
+  title: string;
+  slug: string;
+  author: string;
+  featured_image: string | null;
+  published_at: string;
+  content: string;
+  categories: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+}
+
+const CategoryPage = () => {
+  const { categorySlug } = useParams();
+  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [categoryName, setCategoryName] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCategoryBlogs = async () => {
+      // First get the category
+      const { data: categoryData } = await supabase
+        .from("categories")
+        .select("id, name")
+        .eq("slug", categorySlug)
+        .single();
+
+      if (categoryData) {
+        setCategoryName(categoryData.name);
+
+        // Then get blogs for this category
+        const { data: blogsData } = await supabase
+          .from("blogs")
+          .select(`
+            id,
+            title,
+            slug,
+            author,
+            featured_image,
+            published_at,
+            content,
+            categories (
+              id,
+              name,
+              slug
+            )
+          `)
+          .eq("status", "published")
+          .eq("category_id", categoryData.id)
+          .order("published_at", { ascending: false });
+
+        if (blogsData) setBlogs(blogsData as Blog[]);
+      }
+      setLoading(false);
+    };
+
+    fetchCategoryBlogs();
+  }, [categorySlug]);
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <div className="container mx-auto px-4 py-12">
+          <div className="text-center">Loading...</div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Navbar />
+      <main className="container mx-auto px-4 py-12">
+        <div className="mb-12">
+          <h1 className="text-5xl font-bold mb-4">{categoryName}</h1>
+          <p className="text-xl text-blog-meta">
+            Explore our latest {categoryName.toLowerCase()} articles
+          </p>
+        </div>
+
+        {blogs.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-blog-meta">No blogs in this category yet.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {blogs.map((blog) => (
+              <BlogCard
+                key={blog.id}
+                id={blog.id}
+                title={blog.title}
+                slug={blog.slug}
+                category={blog.categories.name}
+                categorySlug={blog.categories.slug}
+                author={blog.author}
+                featuredImage={blog.featured_image || undefined}
+                publishedAt={blog.published_at}
+                excerpt={blog.content.substring(0, 150)}
+              />
+            ))}
+          </div>
+        )}
+      </main>
+    </>
+  );
+};
+
+export default CategoryPage;
