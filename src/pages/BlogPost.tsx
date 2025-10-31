@@ -57,8 +57,8 @@ const BlogPost = () => {
         // Track page view
         trackPageView(`/blog/${categorySlug}/${blogSlug}`, data.id);
 
-        // Fetch recent posts from same category
-        const { data: recentData } = await supabase
+        // First, try to fetch recent posts from same category
+        let { data: recentData } = await supabase
           .from("blogs")
           .select(`
             id,
@@ -79,6 +79,32 @@ const BlogPost = () => {
           .neq("id", data.id)
           .order("published_at", { ascending: false })
           .limit(4);
+
+        // If not enough posts from same category, fetch from all categories
+        if (!recentData || recentData.length < 4) {
+          const { data: allRecentData } = await supabase
+            .from("blogs")
+            .select(`
+              id,
+              title,
+              slug,
+              author,
+              featured_image,
+              published_at,
+              content,
+              categories (
+                id,
+                name,
+                slug
+              )
+            `)
+            .eq("status", "published")
+            .neq("id", data.id)
+            .order("published_at", { ascending: false })
+            .limit(4);
+          
+          if (allRecentData) recentData = allRecentData;
+        }
 
         if (recentData) setRecentPosts(recentData as Blog[]);
       }
