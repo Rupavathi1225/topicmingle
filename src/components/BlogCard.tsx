@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Calendar } from "lucide-react";
 import { format } from "date-fns";
+import { useTracking } from "@/hooks/useTracking";
 
 interface BlogCardProps {
   id: string;
@@ -26,9 +27,15 @@ const BlogCard = ({
   excerpt,
   serialNumber,
 }: BlogCardProps) => {
+  const { trackClick } = useTracking();
+
+  const handleClick = () => {
+    trackClick(`blog-card-${slug}`, title);
+  };
+
   return (
     <article className="group">
-      <Link to={`/blog/${categorySlug}/${slug}`}>
+      <Link to={`/blog/${categorySlug}/${slug}`} onClick={handleClick}>
         {featuredImage && (
           <div className="aspect-video overflow-hidden rounded-lg mb-4">
             <img
@@ -50,12 +57,16 @@ const BlogCard = ({
           <Link
             to={`/category/${categorySlug}`}
             className="inline-block text-xs font-semibold text-accent hover:underline"
+            onClick={(e) => {
+              e.stopPropagation();
+              trackClick(`category-${categorySlug}`, category);
+            }}
           >
             {category}
           </Link>
         </div>
         
-        <Link to={`/blog/${categorySlug}/${slug}`}>
+        <Link to={`/blog/${categorySlug}/${slug}`} onClick={handleClick}>
           <h2 className="text-2xl font-bold text-blog-heading group-hover:text-accent transition-colors line-clamp-2">
             {title}
           </h2>

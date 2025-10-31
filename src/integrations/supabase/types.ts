@@ -142,6 +142,44 @@ export type Database = {
         }
         Relationships: []
       }
+      related_searches: {
+        Row: {
+          category_id: number
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          search_text: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: number
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          search_text: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: number
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          search_text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "related_searches_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessions: {
         Row: {
           created_at: string

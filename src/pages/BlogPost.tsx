@@ -136,14 +136,6 @@ const BlogPost = () => {
     );
   }
 
-  // Generate related searches based on blog content
-  const relatedSearches = blog ? [
-    `Free ${blog.categories.name}`,
-    `Best Online ${blog.categories.name} Programs`,
-    `${blog.categories.name} and Well-being`,
-    `${blog.categories.name} Tips`
-  ] : [];
-
   return (
     <>
       <Navbar />
@@ -246,10 +238,54 @@ const BlogPost = () => {
                 </article>
 
                 {/* Related Searches */}
-                <RelatedSearches searches={relatedSearches} />
+                <RelatedSearches categoryId={blog.categories.id} />
               </div>
             </div>
           </div>
+
+          {/* Recent Posts Section Above Footer */}
+          {recentPosts.length > 0 && (
+            <div className="max-w-5xl mx-auto mt-16">
+              <h2 className="text-3xl font-bold mb-8 text-blog-heading">Recent posts</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {recentPosts.map((post) => (
+                  <div 
+                    key={post.id}
+                    className="group cursor-pointer border border-blog-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+                    onClick={() => {
+                      trackClick(`recent-post-footer-${post.slug}`, post.title);
+                      window.location.href = `/blog/${post.categories.slug}/${post.slug}`;
+                    }}
+                  >
+                    {post.featured_image && (
+                      <div className="aspect-video overflow-hidden">
+                        <img
+                          src={post.featured_image}
+                          alt={post.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    )}
+                    <div className="p-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-sm font-semibold text-accent">
+                          {post.categories.name}
+                        </span>
+                        <span className="text-blog-meta">•</span>
+                        <time className="text-sm text-blog-meta">
+                          {format(new Date(post.published_at), "MMM dd, yyyy")}
+                        </time>
+                      </div>
+                      <h3 className="text-xl font-bold mb-2 group-hover:text-accent transition-colors text-blog-heading">
+                        {post.title}
+                      </h3>
+                      <p className="text-sm text-blog-meta">By {post.author}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <Footer />
