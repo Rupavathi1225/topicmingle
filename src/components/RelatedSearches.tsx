@@ -57,10 +57,17 @@ const RelatedSearches = ({ categoryId }: RelatedSearchesProps) => {
     }
   }, [categoryId, userCountry]);
 
-  const handleSearchClick = (search: string) => {
-    trackClick(`related-search-${search}`, search);
-    // Open search in new tab (similar to TopicMingle)
-    window.open(`https://www.google.com/search?q=${encodeURIComponent(search)}`, '_blank');
+  const handleSearchClick = async (search: string) => {
+    try {
+      // Track the click with all details before opening new page
+      await trackClick(`related-search-${search}`, search);
+      // Open search in new tab after tracking is complete
+      window.open(`https://www.google.com/search?q=${encodeURIComponent(search)}`, '_blank');
+    } catch (error) {
+      console.error('Error tracking related search click:', error);
+      // Still open the search even if tracking fails
+      window.open(`https://www.google.com/search?q=${encodeURIComponent(search)}`, '_blank');
+    }
   };
 
   if (searches.length === 0) return null;
