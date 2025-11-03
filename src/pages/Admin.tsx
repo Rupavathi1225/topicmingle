@@ -46,6 +46,18 @@ interface RelatedSearch {
   search_text: string;
   display_order: number;
   is_active: boolean;
+  allowed_countries: string[];
+}
+
+interface AnalyticsDetail {
+  session_id: string;
+  ip_address: string;
+  country: string;
+  source: string;
+  user_agent: string;
+  page_views_count: number;
+  clicks_count: number;
+  last_active: string;
 }
 
 interface Analytics {
@@ -80,7 +92,12 @@ const Admin = () => {
     search_text: "",
     display_order: 0,
     is_active: true,
+    allowed_countries: ["WW"] as string[],
   });
+
+  const [analyticsDetails, setAnalyticsDetails] = useState<AnalyticsDetail[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState<string>("all");
+  const [selectedSource, setSelectedSource] = useState<string>("all");
 
   useEffect(() => {
     fetchCategories();
@@ -115,23 +132,57 @@ const Admin = () => {
   };
 
   const fetchAnalytics = async () => {
-    const { data: sessions } = await supabase
+    const { count: sessionsCount } = await supabase
       .from("sessions")
-      .select("id", { count: "exact", head: true });
+      .select("*", { count: "exact", head: true });
     
-    const { data: pageViews } = await supabase
+    const { count: pageViewsCount } = await supabase
       .from("page_views")
-      .select("id", { count: "exact", head: true });
+      .select("*", { count: "exact", head: true });
     
-    const { data: clicks } = await supabase
+    const { count: clicksCount } = await supabase
       .from("clicks")
-      .select("id", { count: "exact", head: true });
+      .select("*", { count: "exact", head: true });
 
     setAnalytics({
-      sessions: sessions?.length || 0,
-      page_views: pageViews?.length || 0,
-      clicks: clicks?.length || 0,
+      sessions: sessionsCount || 0,
+      page_views: pageViewsCount || 0,
+      clicks: clicksCount || 0,
     });
+
+    // Fetch detailed analytics
+    const { data: sessionsData } = await supabase
+      .from("sessions")
+      .select("*")
+      .order("last_active", { ascending: false });
+
+    if (sessionsData) {
+      const details = await Promise.all(
+        sessionsData.map(async (session) => {
+          const { count: pvCount } = await supabase
+            .from("page_views")
+            .select("*", { count: "exact", head: true })
+            .eq("session_id", session.session_id);
+
+          const { count: cCount } = await supabase
+            .from("clicks")
+            .select("*", { count: "exact", head: true })
+            .eq("session_id", session.session_id);
+
+          return {
+            session_id: session.session_id,
+            ip_address: session.ip_address || 'unknown',
+            country: session.country || 'WW',
+            source: session.source || 'direct',
+            user_agent: session.user_agent || 'unknown',
+            page_views_count: pvCount || 0,
+            clicks_count: cCount || 0,
+            last_active: session.last_active,
+          };
+        })
+      );
+      setAnalyticsDetails(details);
+    }
   };
 
   const generateSlug = (title: string) => {
@@ -247,6 +298,7 @@ const Admin = () => {
       search_text: searchFormData.search_text,
       display_order: searchFormData.display_order,
       is_active: searchFormData.is_active,
+      allowed_countries: searchFormData.allowed_countries,
     };
 
     if (editingSearch) {
@@ -282,6 +334,7 @@ const Admin = () => {
       search_text: search.search_text,
       display_order: search.display_order,
       is_active: search.is_active,
+      allowed_countries: search.allowed_countries || ["WW"],
     });
     setIsSearchDialogOpen(true);
   };
@@ -305,6 +358,7 @@ const Admin = () => {
       search_text: "",
       display_order: 0,
       is_active: true,
+      allowed_countries: ["WW"],
     });
     setEditingSearch(null);
     setIsSearchDialogOpen(false);
@@ -521,6 +575,22 @@ const Admin = () => {
                       <Label htmlFor="is-active">Active</Label>
                     </div>
 
+                    <div>
+                      <Label htmlFor="countries">Allowed Countries (comma-separated)</Label>
+                      <Input
+                        id="countries"
+                        placeholder="WW,US,IN (or just WW for worldwide)"
+                        value={searchFormData.allowed_countries.join(',')}
+                        onChange={(e) => {
+                          const countries = e.target.value.split(',').map(c => c.trim().toUpperCase()).filter(c => c);
+                          setSearchFormData({ ...searchFormData, allowed_countries: countries.length > 0 ? countries : ["WW"] });
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Use country codes: US, IN, GB, etc. Use WW for worldwide.
+                      </p>
+                    </div>
+
                     <div className="flex gap-2">
                       <Button type="submit" className="flex-1">
                         {editingSearch ? "Update Search" : "Create Search"}
@@ -644,6 +714,7 @@ const Admin = () => {
                   <tr>
                     <th className="text-left p-4 font-semibold">Category</th>
                     <th className="text-left p-4 font-semibold">Search Text</th>
+                    <th className="text-left p-4 font-semibold">Countries</th>
                     <th className="text-left p-4 font-semibold">Order</th>
                     <th className="text-left p-4 font-semibold">Status</th>
                     <th className="text-left p-4 font-semibold">Actions</th>
@@ -656,6 +727,11 @@ const Admin = () => {
                       <tr key={search.id} className="border-b last:border-0">
                         <td className="p-4">{category?.name}</td>
                         <td className="p-4">{search.search_text}</td>
+                        <td className="p-4">
+                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                            {search.allowed_countries?.join(', ') || 'WW'}
+                          </span>
+                        </td>
                         <td className="p-4">{search.display_order}</td>
                         <td className="p-4">
                           <span
@@ -697,21 +773,112 @@ const Admin = () => {
 
         {/* Analytics Dashboard */}
         {activeTab === 'analytics' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-card rounded-lg border p-6">
-              <h3 className="text-lg font-semibold mb-2">Total Sessions</h3>
-              <p className="text-4xl font-bold text-accent">{analytics.sessions}</p>
-              <p className="text-sm text-muted-foreground mt-2">Unique visitors tracked</p>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-card rounded-lg border p-6">
+                <h3 className="text-lg font-semibold mb-2">Total Sessions</h3>
+                <p className="text-4xl font-bold text-accent">{analytics.sessions}</p>
+                <p className="text-sm text-muted-foreground mt-2">Unique visitors tracked</p>
+              </div>
+              <div className="bg-card rounded-lg border p-6">
+                <h3 className="text-lg font-semibold mb-2">Page Views</h3>
+                <p className="text-4xl font-bold text-accent">{analytics.page_views}</p>
+                <p className="text-sm text-muted-foreground mt-2">Total pages viewed</p>
+              </div>
+              <div className="bg-card rounded-lg border p-6">
+                <h3 className="text-lg font-semibold mb-2">Total Clicks</h3>
+                <p className="text-4xl font-bold text-accent">{analytics.clicks}</p>
+                <p className="text-sm text-muted-foreground mt-2">Buttons and links clicked</p>
+              </div>
             </div>
-            <div className="bg-card rounded-lg border p-6">
-              <h3 className="text-lg font-semibold mb-2">Page Views</h3>
-              <p className="text-4xl font-bold text-accent">{analytics.page_views}</p>
-              <p className="text-sm text-muted-foreground mt-2">Total pages viewed</p>
+
+            {/* Filters */}
+            <div className="bg-card rounded-lg border p-4">
+              <h3 className="text-lg font-semibold mb-4">Filters</h3>
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <Label>Country</Label>
+                  <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Countries</SelectItem>
+                      <SelectItem value="WW">Worldwide</SelectItem>
+                      <SelectItem value="US">United States</SelectItem>
+                      <SelectItem value="IN">India</SelectItem>
+                      <SelectItem value="GB">United Kingdom</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex-1">
+                  <Label>Source</Label>
+                  <Select value={selectedSource} onValueChange={setSelectedSource}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Sources</SelectItem>
+                      <SelectItem value="direct">Direct</SelectItem>
+                      <SelectItem value="meta">Meta</SelectItem>
+                      <SelectItem value="linkedin">LinkedIn</SelectItem>
+                      <SelectItem value="google">Google</SelectItem>
+                      <SelectItem value="twitter">Twitter</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
-            <div className="bg-card rounded-lg border p-6">
-              <h3 className="text-lg font-semibold mb-2">Total Clicks</h3>
-              <p className="text-4xl font-bold text-accent">{analytics.clicks}</p>
-              <p className="text-sm text-muted-foreground mt-2">Buttons and links clicked</p>
+
+            {/* Detailed Analytics Table */}
+            <div className="bg-card rounded-lg border">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="border-b">
+                    <tr>
+                      <th className="text-left p-4 font-semibold">Session ID</th>
+                      <th className="text-left p-4 font-semibold">IP Address</th>
+                      <th className="text-left p-4 font-semibold">Country</th>
+                      <th className="text-left p-4 font-semibold">Source</th>
+                      <th className="text-left p-4 font-semibold">Device</th>
+                      <th className="text-left p-4 font-semibold">Page Views</th>
+                      <th className="text-left p-4 font-semibold">Clicks</th>
+                      <th className="text-left p-4 font-semibold">Last Active</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analyticsDetails
+                      .filter(detail => 
+                        (selectedCountry === 'all' || detail.country === selectedCountry) &&
+                        (selectedSource === 'all' || detail.source === selectedSource)
+                      )
+                      .map((detail) => (
+                        <tr key={detail.session_id} className="border-b last:border-0">
+                          <td className="p-4 font-mono text-xs">{detail.session_id.substring(0, 8)}...</td>
+                          <td className="p-4">{detail.ip_address}</td>
+                          <td className="p-4">
+                            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                              {detail.country}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                              {detail.source}
+                            </span>
+                          </td>
+                          <td className="p-4 text-xs max-w-xs truncate" title={detail.user_agent}>
+                            {detail.user_agent.includes('Mobile') ? '📱 Mobile' : '💻 Desktop'}
+                          </td>
+                          <td className="p-4 text-center">{detail.page_views_count}</td>
+                          <td className="p-4 text-center">{detail.clicks_count}</td>
+                          <td className="p-4 text-sm">
+                            {new Date(detail.last_active).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

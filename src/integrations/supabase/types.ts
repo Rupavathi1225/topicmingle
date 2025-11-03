@@ -96,54 +96,67 @@ export type Database = {
           button_id: string
           button_label: string | null
           clicked_at: string
+          country: string | null
           id: string
           page_url: string | null
           session_id: string
+          source: string | null
         }
         Insert: {
           button_id: string
           button_label?: string | null
           clicked_at?: string
+          country?: string | null
           id?: string
           page_url?: string | null
           session_id: string
+          source?: string | null
         }
         Update: {
           button_id?: string
           button_label?: string | null
           clicked_at?: string
+          country?: string | null
           id?: string
           page_url?: string | null
           session_id?: string
+          source?: string | null
         }
         Relationships: []
       }
       page_views: {
         Row: {
           blog_id: string | null
+          country: string | null
           id: string
           page_url: string
           session_id: string
+          source: string | null
           viewed_at: string
         }
         Insert: {
           blog_id?: string | null
+          country?: string | null
           id?: string
           page_url: string
           session_id: string
+          source?: string | null
           viewed_at?: string
         }
         Update: {
           blog_id?: string | null
+          country?: string | null
           id?: string
           page_url?: string
           session_id?: string
+          source?: string | null
           viewed_at?: string
         }
         Relationships: []
       }
       related_searches: {
         Row: {
+          allowed_countries: string[] | null
           category_id: number
           created_at: string
           display_order: number
@@ -153,6 +166,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allowed_countries?: string[] | null
           category_id: number
           created_at?: string
           display_order?: number
@@ -162,6 +176,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allowed_countries?: string[] | null
           category_id?: number
           created_at?: string
           display_order?: number
@@ -182,27 +197,33 @@ export type Database = {
       }
       sessions: {
         Row: {
+          country: string | null
           created_at: string
           id: string
           ip_address: string | null
           last_active: string
           session_id: string
+          source: string | null
           user_agent: string | null
         }
         Insert: {
+          country?: string | null
           created_at?: string
           id?: string
           ip_address?: string | null
           last_active?: string
           session_id: string
+          source?: string | null
           user_agent?: string | null
         }
         Update: {
+          country?: string | null
           created_at?: string
           id?: string
           ip_address?: string | null
           last_active?: string
           session_id?: string
+          source?: string | null
           user_agent?: string | null
         }
         Relationships: []

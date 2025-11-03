@@ -7,6 +7,7 @@ interface RelatedSearch {
   id: string;
   search_text: string;
   display_order: number;
+  allowed_countries: string[];
 }
 
 interface RelatedSearchesProps {
@@ -16,6 +17,21 @@ interface RelatedSearchesProps {
 const RelatedSearches = ({ categoryId }: RelatedSearchesProps) => {
   const { trackClick } = useTracking();
   const [searches, setSearches] = useState<RelatedSearch[]>([]);
+  const [userCountry, setUserCountry] = useState<string>('WW');
+
+  useEffect(() => {
+    // Get user's country
+    const getUserCountry = async () => {
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        const data = await response.json();
+        setUserCountry(data.country_code || 'WW');
+      } catch {
+        setUserCountry('WW');
+      }
+    };
+    getUserCountry();
+  }, []);
 
   useEffect(() => {
     const fetchRelatedSearches = async () => {
@@ -24,14 +40,22 @@ const RelatedSearches = ({ categoryId }: RelatedSearchesProps) => {
         .select('*')
         .eq('category_id', categoryId)
         .eq('is_active', true)
-        .order('display_order', { ascending: true })
-        .limit(4);
+        .order('display_order', { ascending: true });
       
-      if (data) setSearches(data);
+      if (data) {
+        // Filter by country
+        const filteredSearches = data.filter(search => 
+          search.allowed_countries.includes('WW') || 
+          search.allowed_countries.includes(userCountry)
+        ).slice(0, 4);
+        setSearches(filteredSearches);
+      }
     };
 
-    fetchRelatedSearches();
-  }, [categoryId]);
+    if (userCountry) {
+      fetchRelatedSearches();
+    }
+  }, [categoryId, userCountry]);
 
   const handleSearchClick = (search: string) => {
     trackClick(`related-search-${search}`, search);
