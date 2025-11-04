@@ -61,7 +61,7 @@ interface AnalyticsDetail {
   page_views_count: number;
   clicks_count: number;
   related_searches_count: number;
-  related_searches_breakdown: Array<{search_term: string; click_count: number}>;
+  related_searches_breakdown: Array<{search_term: string; click_count: number; unique_clicks: number}>;
   last_active: string;
 }
 
@@ -194,22 +194,40 @@ const Admin = () => {
             .eq("session_id", session.session_id)
             .like("button_id", "related-search-%");
 
-          // Get breakdown of each related search
+          // Get breakdown of each related search with session_id to get IP
           const { data: rsBreakdown } = await supabase
             .from("clicks")
-            .select("button_label")
+            .select("button_label, session_id")
             .eq("session_id", session.session_id)
             .like("button_id", "related-search-%");
 
-          // Count clicks per search term
-          const breakdownMap = new Map<string, number>();
-          rsBreakdown?.forEach(click => {
+          // Count clicks and unique IPs per search term
+          const breakdownMap = new Map<string, {clicks: number; ips: Set<string>}>();
+          
+          for (const click of rsBreakdown || []) {
             const term = click.button_label || 'Unknown';
-            breakdownMap.set(term, (breakdownMap.get(term) || 0) + 1);
-          });
-          const breakdown = Array.from(breakdownMap.entries()).map(([search_term, click_count]) => ({
+            
+            // Get IP for this session_id
+            const { data: sessionData } = await supabase
+              .from("sessions")
+              .select("ip_address")
+              .eq("session_id", click.session_id)
+              .single();
+            
+            const ip = sessionData?.ip_address || 'unknown';
+            
+            if (!breakdownMap.has(term)) {
+              breakdownMap.set(term, {clicks: 0, ips: new Set()});
+            }
+            const entry = breakdownMap.get(term)!;
+            entry.clicks += 1;
+            entry.ips.add(ip);
+          }
+          
+          const breakdown = Array.from(breakdownMap.entries()).map(([search_term, data]) => ({
             search_term,
-            click_count
+            click_count: data.clicks,
+            unique_clicks: data.ips.size
           }));
 
           return {
@@ -933,11 +951,16 @@ const Admin = () => {
                                   </summary>
                                   <div className="mt-2 space-y-1">
                                     {detail.related_searches_breakdown.map((item, idx) => (
-                                      <div key={idx} className="flex justify-between items-center text-xs bg-gray-50 p-2 rounded">
-                                        <span className="font-medium text-gray-700">{item.search_term}</span>
-                                        <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-semibold">
-                                          {item.click_count}
-                                        </span>
+                                      <div key={idx} className="flex justify-between items-center text-xs bg-gray-50 p-2 rounded gap-2">
+                                        <span className="font-medium text-gray-700 flex-1">{item.search_term}</span>
+                                        <div className="flex gap-2">
+                                          <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-semibold">
+                                            Total: {item.click_count}
+                                          </span>
+                                          <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-semibold">
+                                            Unique: {item.unique_clicks}
+                                          </span>
+                                        </div>
                                       </div>
                                     ))}
                                   </div>
