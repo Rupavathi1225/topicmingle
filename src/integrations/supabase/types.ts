@@ -161,8 +161,10 @@ export type Database = {
           created_at: string
           display_order: number
           id: string
+          ip_address: string | null
           is_active: boolean
           search_text: string
+          session_id: string | null
           updated_at: string
         }
         Insert: {
@@ -171,8 +173,10 @@ export type Database = {
           created_at?: string
           display_order?: number
           id?: string
+          ip_address?: string | null
           is_active?: boolean
           search_text: string
+          session_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -181,8 +185,10 @@ export type Database = {
           created_at?: string
           display_order?: number
           id?: string
+          ip_address?: string | null
           is_active?: boolean
           search_text?: string
+          session_id?: string | null
           updated_at?: string
         }
         Relationships: [

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTracking } from "@/hooks/useTracking";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,6 +48,8 @@ interface RelatedSearch {
   display_order: number;
   is_active: boolean;
   allowed_countries: string[];
+  session_id?: string;
+  ip_address?: string;
 }
 
 interface AnalyticsDetail {
@@ -67,6 +70,7 @@ interface Analytics {
 }
 
 const Admin = () => {
+  const { sessionId } = useTracking();
   const [categories, setCategories] = useState<Category[]>([]);
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [relatedSearches, setRelatedSearches] = useState<RelatedSearch[]>([]);
@@ -99,12 +103,25 @@ const Admin = () => {
   const [selectedCountry, setSelectedCountry] = useState<string>("all");
   const [selectedSource, setSelectedSource] = useState<string>("all");
 
+  // Get IP address for tracking
+  const getIPAddress = async () => {
+    try {
+      const response = await fetch('https://api.ipify.org?format=json');
+      const data = await response.json();
+      return data.ip || 'unknown';
+    } catch {
+      return 'unknown';
+    }
+  };
+
+
   useEffect(() => {
     fetchCategories();
     fetchBlogs();
     fetchRelatedSearches();
     fetchAnalytics();
   }, []);
+
 
   const fetchCategories = async () => {
     const { data } = await supabase
@@ -293,12 +310,16 @@ const Admin = () => {
       return;
     }
 
+    const ipAddress = await getIPAddress();
+
     const searchData = {
       category_id: parseInt(searchFormData.category_id),
       search_text: searchFormData.search_text,
       display_order: searchFormData.display_order,
       is_active: searchFormData.is_active,
       allowed_countries: searchFormData.allowed_countries,
+      session_id: sessionId,
+      ip_address: ipAddress,
     };
 
     if (editingSearch) {
