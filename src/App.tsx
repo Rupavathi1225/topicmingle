@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 import CategoryPage from "./pages/CategoryPage";
 import BlogPost from "./pages/BlogPost";
 import Admin from "./pages/Admin";
+import RelatedSearchPage from "./pages/RelatedSearchPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/category/:categorySlug" element={<CategoryPage />} />
           <Route path="/blog/:categorySlug/:blogSlug" element={<BlogPost />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/related-search" element={<RelatedSearchPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

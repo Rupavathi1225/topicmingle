@@ -61,12 +61,12 @@ const RelatedSearches = ({ categoryId }: RelatedSearchesProps) => {
     try {
       // Track the click with all details before opening new page
       await trackClick(`related-search-${search}`, search);
-      // Open search in new tab after tracking is complete
-      window.open(`https://www.google.com/search?q=${encodeURIComponent(search)}`, '_blank');
+      // Redirect to our related search page
+      window.location.href = `/related-search?q=${encodeURIComponent(search)}`;
     } catch (error) {
       console.error('Error tracking related search click:', error);
-      // Still open the search even if tracking fails
-      window.open(`https://www.google.com/search?q=${encodeURIComponent(search)}`, '_blank');
+      // Still redirect even if tracking fails
+      window.location.href = `/related-search?q=${encodeURIComponent(search)}`;
     }
   };
 

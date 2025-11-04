@@ -61,7 +61,7 @@ interface AnalyticsDetail {
   page_views_count: number;
   clicks_count: number;
   related_searches_count: number;
-  related_searches_breakdown: Array<{search_term: string; click_count: number; unique_clicks: number}>;
+  related_searches_breakdown: Array<{search_term: string; click_count: number; unique_clicks: number; visit_now_clicks: number; visit_now_unique: number}>;
   last_active: string;
 }
 
@@ -202,7 +202,7 @@ const Admin = () => {
             .like("button_id", "related-search-%");
 
           // Count clicks and unique IPs per search term
-          const breakdownMap = new Map<string, {clicks: number; ips: Set<string>}>();
+          const breakdownMap = new Map<string, {clicks: number; ips: Set<string>; visitNowClicks: number; visitNowIps: Set<string>}>();
           
           for (const click of rsBreakdown || []) {
             const term = click.button_label || 'Unknown';
@@ -217,17 +217,40 @@ const Admin = () => {
             const ip = sessionData?.ip_address || 'unknown';
             
             if (!breakdownMap.has(term)) {
-              breakdownMap.set(term, {clicks: 0, ips: new Set()});
+              breakdownMap.set(term, {clicks: 0, ips: new Set(), visitNowClicks: 0, visitNowIps: new Set()});
             }
             const entry = breakdownMap.get(term)!;
             entry.clicks += 1;
             entry.ips.add(ip);
           }
+
+          // Get Visit Now button clicks for each related search
+          for (const [term, data] of breakdownMap.entries()) {
+            const { data: visitNowClicks } = await supabase
+              .from("clicks")
+              .select("session_id")
+              .eq("button_id", `visit-now-${term}`)
+              .eq("session_id", session.session_id);
+
+            for (const click of visitNowClicks || []) {
+              const { data: sessionData } = await supabase
+                .from("sessions")
+                .select("ip_address")
+                .eq("session_id", click.session_id)
+                .single();
+              
+              const ip = sessionData?.ip_address || 'unknown';
+              data.visitNowClicks += 1;
+              data.visitNowIps.add(ip);
+            }
+          }
           
           const breakdown = Array.from(breakdownMap.entries()).map(([search_term, data]) => ({
             search_term,
             click_count: data.clicks,
-            unique_clicks: data.ips.size
+            unique_clicks: data.ips.size,
+            visit_now_clicks: data.visitNowClicks,
+            visit_now_unique: data.visitNowIps.size
           }));
 
           return {
@@ -951,15 +974,36 @@ const Admin = () => {
                                   </summary>
                                   <div className="mt-2 space-y-1">
                                     {detail.related_searches_breakdown.map((item, idx) => (
-                                      <div key={idx} className="flex justify-between items-center text-xs bg-gray-50 p-2 rounded gap-2">
-                                        <span className="font-medium text-gray-700 flex-1">{item.search_term}</span>
-                                        <div className="flex gap-2">
-                                          <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-semibold">
-                                            Total: {item.click_count}
-                                          </span>
-                                          <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-semibold">
-                                            Unique: {item.unique_clicks}
-                                          </span>
+                                      <div key={idx} className="bg-gray-50 p-3 rounded space-y-2">
+                                        <div className="flex justify-between items-center text-xs gap-2">
+                                          <span className="font-medium text-gray-700 flex-1">{item.search_term}</span>
+                                          <div className="flex gap-2">
+                                            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-semibold">
+                                              Total: {item.click_count}
+                                            </span>
+                                            <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-semibold">
+                                              Unique: {item.unique_clicks}
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs gap-2 pl-4 border-l-2 border-green-300">
+                                          <span className="text-gray-600">Visit Now Button:</span>
+                                          <div className="flex gap-2">
+                                            {item.visit_now_clicks > 0 ? (
+                                              <>
+                                                <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded font-semibold">
+                                                  Clicked: {item.visit_now_clicks}
+                                                </span>
+                                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-semibold">
+                                                  Unique: {item.visit_now_unique}
+                                                </span>
+                                              </>
+                                            ) : (
+                                              <span className="px-2 py-0.5 bg-gray-200 text-gray-600 rounded font-semibold">
+                                                Not Clicked
+                                              </span>
+                                            )}
+                                          </div>
                                         </div>
                                       </div>
                                     ))}
