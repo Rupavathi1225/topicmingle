@@ -60,6 +60,7 @@ interface AnalyticsDetail {
   user_agent: string;
   page_views_count: number;
   clicks_count: number;
+  related_searches_count: number;
   last_active: string;
 }
 
@@ -186,6 +187,12 @@ const Admin = () => {
             .select("*", { count: "exact", head: true })
             .eq("session_id", session.session_id);
 
+          const { count: rsCount } = await supabase
+            .from("clicks")
+            .select("*", { count: "exact", head: true })
+            .eq("session_id", session.session_id)
+            .like("button_id", "related-search-%");
+
           return {
             session_id: session.session_id,
             ip_address: session.ip_address || 'unknown',
@@ -194,6 +201,7 @@ const Admin = () => {
             user_agent: session.user_agent || 'unknown',
             page_views_count: pvCount || 0,
             clicks_count: cCount || 0,
+            related_searches_count: rsCount || 0,
             last_active: session.last_active,
           };
         })
@@ -864,6 +872,7 @@ const Admin = () => {
                       <th className="text-left p-4 font-semibold">Device</th>
                       <th className="text-left p-4 font-semibold">Page Views</th>
                       <th className="text-left p-4 font-semibold">Clicks</th>
+                      <th className="text-left p-4 font-semibold">Related Searches</th>
                       <th className="text-left p-4 font-semibold">Last Active</th>
                     </tr>
                   </thead>
@@ -892,6 +901,11 @@ const Admin = () => {
                           </td>
                           <td className="p-4 text-center">{detail.page_views_count}</td>
                           <td className="p-4 text-center">{detail.clicks_count}</td>
+                          <td className="p-4 text-center">
+                            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
+                              {detail.related_searches_count}
+                            </span>
+                          </td>
                           <td className="p-4 text-sm">
                             {new Date(detail.last_active).toLocaleString()}
                           </td>
