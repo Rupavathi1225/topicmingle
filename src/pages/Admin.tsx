@@ -61,6 +61,7 @@ interface AnalyticsDetail {
   page_views_count: number;
   clicks_count: number;
   related_searches_count: number;
+  related_searches_breakdown: Array<{search_term: string; click_count: number}>;
   last_active: string;
 }
 
@@ -193,6 +194,24 @@ const Admin = () => {
             .eq("session_id", session.session_id)
             .like("button_id", "related-search-%");
 
+          // Get breakdown of each related search
+          const { data: rsBreakdown } = await supabase
+            .from("clicks")
+            .select("button_label")
+            .eq("session_id", session.session_id)
+            .like("button_id", "related-search-%");
+
+          // Count clicks per search term
+          const breakdownMap = new Map<string, number>();
+          rsBreakdown?.forEach(click => {
+            const term = click.button_label || 'Unknown';
+            breakdownMap.set(term, (breakdownMap.get(term) || 0) + 1);
+          });
+          const breakdown = Array.from(breakdownMap.entries()).map(([search_term, click_count]) => ({
+            search_term,
+            click_count
+          }));
+
           return {
             session_id: session.session_id,
             ip_address: session.ip_address || 'unknown',
@@ -202,6 +221,7 @@ const Admin = () => {
             page_views_count: pvCount || 0,
             clicks_count: cCount || 0,
             related_searches_count: rsCount || 0,
+            related_searches_breakdown: breakdown,
             last_active: session.last_active,
           };
         })
@@ -901,10 +921,29 @@ const Admin = () => {
                           </td>
                           <td className="p-4 text-center">{detail.page_views_count}</td>
                           <td className="p-4 text-center">{detail.clicks_count}</td>
-                          <td className="p-4 text-center">
-                            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
-                              {detail.related_searches_count}
-                            </span>
+                          <td className="p-4">
+                            <div className="flex flex-col gap-1">
+                              <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold text-center">
+                                Total: {detail.related_searches_count}
+                              </span>
+                              {detail.related_searches_breakdown.length > 0 && (
+                                <details className="mt-1">
+                                  <summary className="cursor-pointer text-xs text-blue-600 hover:text-blue-800">
+                                    View breakdown
+                                  </summary>
+                                  <div className="mt-2 space-y-1">
+                                    {detail.related_searches_breakdown.map((item, idx) => (
+                                      <div key={idx} className="flex justify-between items-center text-xs bg-gray-50 p-2 rounded">
+                                        <span className="font-medium text-gray-700">{item.search_term}</span>
+                                        <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-semibold">
+                                          {item.click_count}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </details>
+                              )}
+                            </div>
                           </td>
                           <td className="p-4 text-sm">
                             {new Date(detail.last_active).toLocaleString()}
