@@ -62,6 +62,7 @@ interface AnalyticsDetail {
   clicks_count: number;
   related_searches_count: number;
   related_searches_breakdown: Array<{search_term: string; click_count: number; unique_clicks: number; visit_now_clicks: number; visit_now_unique: number}>;
+  blog_clicks_breakdown: Array<{blog_title: string; click_count: number; unique_clicks: number}>;
   last_active: string;
 }
 
@@ -253,6 +254,40 @@ const Admin = () => {
             visit_now_unique: data.visitNowIps.size
           }));
 
+          // Get blog clicks breakdown
+          const { data: blogClicksData } = await supabase
+            .from("clicks")
+            .select("button_label, session_id")
+            .eq("session_id", session.session_id)
+            .like("button_id", "blog-card-%");
+
+          const blogBreakdownMap = new Map<string, {clicks: number; ips: Set<string>}>();
+          
+          for (const click of blogClicksData || []) {
+            const blogTitle = click.button_label || 'Unknown';
+            
+            const { data: sessionData } = await supabase
+              .from("sessions")
+              .select("ip_address")
+              .eq("session_id", click.session_id)
+              .single();
+            
+            const ip = sessionData?.ip_address || 'unknown';
+            
+            if (!blogBreakdownMap.has(blogTitle)) {
+              blogBreakdownMap.set(blogTitle, {clicks: 0, ips: new Set()});
+            }
+            const entry = blogBreakdownMap.get(blogTitle)!;
+            entry.clicks += 1;
+            entry.ips.add(ip);
+          }
+
+          const blogBreakdown = Array.from(blogBreakdownMap.entries()).map(([blog_title, data]) => ({
+            blog_title,
+            click_count: data.clicks,
+            unique_clicks: data.ips.size
+          }));
+
           return {
             session_id: session.session_id,
             ip_address: session.ip_address || 'unknown',
@@ -263,6 +298,7 @@ const Admin = () => {
             clicks_count: cCount || 0,
             related_searches_count: rsCount || 0,
             related_searches_breakdown: breakdown,
+            blog_clicks_breakdown: blogBreakdown,
             last_active: session.last_active,
           };
         })
@@ -934,6 +970,7 @@ const Admin = () => {
                       <th className="text-left p-4 font-semibold">Page Views</th>
                       <th className="text-left p-4 font-semibold">Clicks</th>
                       <th className="text-left p-4 font-semibold">Related Searches</th>
+                      <th className="text-left p-4 font-semibold">Blog Clicks</th>
                       <th className="text-left p-4 font-semibold">Last Active</th>
                     </tr>
                   </thead>
@@ -1003,6 +1040,37 @@ const Admin = () => {
                                                 Not Clicked
                                               </span>
                                             )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </details>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex flex-col gap-1">
+                              <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs font-semibold text-center">
+                                Total: {detail.blog_clicks_breakdown.reduce((sum, item) => sum + item.click_count, 0)}
+                              </span>
+                              {detail.blog_clicks_breakdown.length > 0 && (
+                                <details className="mt-1">
+                                  <summary className="cursor-pointer text-xs text-blue-600 hover:text-blue-800">
+                                    View breakdown
+                                  </summary>
+                                  <div className="mt-2 space-y-1">
+                                    {detail.blog_clicks_breakdown.map((item, idx) => (
+                                      <div key={idx} className="bg-gray-50 p-3 rounded">
+                                        <div className="flex justify-between items-center text-xs gap-2">
+                                          <span className="font-medium text-gray-700 flex-1">{item.blog_title}</span>
+                                          <div className="flex gap-2">
+                                            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-semibold">
+                                              Total: {item.click_count}
+                                            </span>
+                                            <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-semibold">
+                                              Unique: {item.unique_clicks}
+                                            </span>
                                           </div>
                                         </div>
                                       </div>
