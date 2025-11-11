@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { dataOrbitZoneClient } from "@/integrations/dataorbitzone/client";
 import { useTracking } from "@/hooks/useTracking";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,7 +79,8 @@ const Admin = () => {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [relatedSearches, setRelatedSearches] = useState<RelatedSearch[]>([]);
   const [analytics, setAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
-  const [activeTab, setActiveTab] = useState<'blogs' | 'searches' | 'analytics'>('blogs');
+  const [dataOrbitAnalytics, setDataOrbitAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
+  const [activeTab, setActiveTab] = useState<'blogs' | 'searches' | 'analytics' | 'dataorbit-analytics'>('blogs');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
   const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
@@ -103,8 +105,11 @@ const Admin = () => {
   });
 
   const [analyticsDetails, setAnalyticsDetails] = useState<AnalyticsDetail[]>([]);
+  const [dataOrbitAnalyticsDetails, setDataOrbitAnalyticsDetails] = useState<any[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<string>("all");
   const [selectedSource, setSelectedSource] = useState<string>("all");
+  const [dataOrbitSelectedCountry, setDataOrbitSelectedCountry] = useState<string>("all");
+  const [dataOrbitSelectedSiteName, setDataOrbitSelectedSiteName] = useState<string>("all");
 
   // Get IP address for tracking
   const getIPAddress = async () => {
@@ -123,6 +128,7 @@ const Admin = () => {
     fetchBlogs();
     fetchRelatedSearches();
     fetchAnalytics();
+    fetchDataOrbitAnalytics();
   }, []);
 
 
@@ -478,6 +484,54 @@ const Admin = () => {
     }
   };
 
+  const fetchDataOrbitAnalytics = async () => {
+    try {
+      // Fetch total counts
+      const { data: analyticsData } = await dataOrbitZoneClient
+        .from("analytics")
+        .select("*");
+
+      if (analyticsData) {
+        const sessions = new Set(analyticsData.map(a => a.session_id)).size;
+        const pageViews = analyticsData.filter(a => a.event_type === 'page_view').length;
+        const clicks = analyticsData.filter(a => a.event_type === 'click').length;
+
+        setDataOrbitAnalytics({
+          sessions,
+          page_views: pageViews,
+          clicks
+        });
+
+        // Group by session
+        const sessionMap = new Map();
+        analyticsData.forEach(event => {
+          if (!sessionMap.has(event.session_id)) {
+            sessionMap.set(event.session_id, {
+              session_id: event.session_id,
+              ip_address: event.ip_address || 'unknown',
+              country: event.country || 'WW',
+              site_name: event.site_name || 'Unknown',
+              device: event.device || 'unknown',
+              page_views: 0,
+              clicks: 0,
+              created_at: event.created_at
+            });
+          }
+          const session = sessionMap.get(event.session_id);
+          if (event.event_type === 'page_view') session.page_views++;
+          if (event.event_type === 'click') session.clicks++;
+        });
+
+        setDataOrbitAnalyticsDetails(Array.from(sessionMap.values()).sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        ));
+      }
+    } catch (error) {
+      console.error('Error fetching DataOrbitZone analytics:', error);
+      toast.error('Failed to fetch DataOrbitZone analytics');
+    }
+  };
+
   const resetSearchForm = () => {
     setSearchFormData({
       category_id: "",
@@ -767,6 +821,16 @@ const Admin = () => {
             }`}
           >
             Analytics
+          </button>
+          <button
+            onClick={() => setActiveTab('dataorbit-analytics')}
+            className={`px-4 py-2 font-semibold transition-colors ${
+              activeTab === 'dataorbit-analytics'
+                ? 'border-b-2 border-accent text-accent'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            DataOrbitZone Analytics
           </button>
         </div>
 
@@ -1082,6 +1146,122 @@ const Admin = () => {
                           </td>
                           <td className="p-4 text-sm">
                             {new Date(detail.last_active).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* DataOrbitZone Analytics Dashboard */}
+        {activeTab === 'dataorbit-analytics' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-card rounded-lg border p-6">
+                <h3 className="text-lg font-semibold mb-2">Total Sessions</h3>
+                <p className="text-4xl font-bold text-accent">{dataOrbitAnalytics.sessions}</p>
+                <p className="text-sm text-muted-foreground mt-2">Unique visitors tracked</p>
+              </div>
+              <div className="bg-card rounded-lg border p-6">
+                <h3 className="text-lg font-semibold mb-2">Page Views</h3>
+                <p className="text-4xl font-bold text-accent">{dataOrbitAnalytics.page_views}</p>
+                <p className="text-sm text-muted-foreground mt-2">Total pages viewed</p>
+              </div>
+              <div className="bg-card rounded-lg border p-6">
+                <h3 className="text-lg font-semibold mb-2">Total Clicks</h3>
+                <p className="text-4xl font-bold text-accent">{dataOrbitAnalytics.clicks}</p>
+                <p className="text-sm text-muted-foreground mt-2">Buttons and links clicked</p>
+              </div>
+            </div>
+
+            {/* Filters */}
+            <div className="bg-card rounded-lg border p-4">
+              <h3 className="text-lg font-semibold mb-4">Filters</h3>
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <Label>Country</Label>
+                  <Select value={dataOrbitSelectedCountry} onValueChange={setDataOrbitSelectedCountry}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Countries</SelectItem>
+                      {Array.from(new Set(dataOrbitAnalyticsDetails.map(d => d.country))).map(country => (
+                        <SelectItem key={country} value={country}>{country}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex-1">
+                  <Label>Site Name</Label>
+                  <Select value={dataOrbitSelectedSiteName} onValueChange={setDataOrbitSelectedSiteName}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Sites</SelectItem>
+                      {Array.from(new Set(dataOrbitAnalyticsDetails.map(d => d.site_name))).map(site => (
+                        <SelectItem key={site} value={site}>{site}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Detailed Sessions Table */}
+            <div className="bg-card rounded-lg border">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="border-b">
+                    <tr>
+                      <th className="text-left p-4 font-semibold">Session ID</th>
+                      <th className="text-left p-4 font-semibold">IP Address</th>
+                      <th className="text-left p-4 font-semibold">Country</th>
+                      <th className="text-left p-4 font-semibold">Site Name</th>
+                      <th className="text-left p-4 font-semibold">Device</th>
+                      <th className="text-left p-4 font-semibold">Page Views</th>
+                      <th className="text-left p-4 font-semibold">Clicks</th>
+                      <th className="text-left p-4 font-semibold">Created At</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dataOrbitAnalyticsDetails
+                      .filter(detail => {
+                        const countryMatch = dataOrbitSelectedCountry === 'all' || detail.country === dataOrbitSelectedCountry;
+                        const siteMatch = dataOrbitSelectedSiteName === 'all' || detail.site_name === dataOrbitSelectedSiteName;
+                        return countryMatch && siteMatch;
+                      })
+                      .map((detail, index) => (
+                        <tr key={index} className="border-b last:border-0 hover:bg-muted/50">
+                          <td className="p-4 text-sm font-mono">{detail.session_id.slice(0, 8)}...</td>
+                          <td className="p-4 text-sm">{detail.ip_address}</td>
+                          <td className="p-4">
+                            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                              {detail.country}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                              {detail.site_name}
+                            </span>
+                          </td>
+                          <td className="p-4 text-sm">{detail.device}</td>
+                          <td className="p-4">
+                            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
+                              {detail.page_views}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs font-semibold">
+                              {detail.clicks}
+                            </span>
+                          </td>
+                          <td className="p-4 text-sm">
+                            {new Date(detail.created_at).toLocaleString()}
                           </td>
                         </tr>
                       ))}
