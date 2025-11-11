@@ -486,12 +486,19 @@ const Admin = () => {
 
   const fetchDataOrbitAnalytics = async () => {
     try {
-      // Fetch total counts
-      const { data: analyticsData } = await dataOrbitZoneClient
+      // Fetch all analytics data
+      const { data: analyticsData, error } = await dataOrbitZoneClient
         .from("analytics")
-        .select("*");
+        .select("*")
+        .order('created_at', { ascending: false });
 
-      if (analyticsData) {
+      if (error) {
+        console.error('DataOrbitZone fetch error:', error);
+        toast.error('Failed to fetch DataOrbitZone analytics. Check RLS policies.');
+        return;
+      }
+
+      if (analyticsData && analyticsData.length > 0) {
         const sessions = new Set(analyticsData.map(a => a.session_id)).size;
         const pageViews = analyticsData.filter(a => a.event_type === 'page_view').length;
         const clicks = analyticsData.filter(a => a.event_type === 'click').length;
@@ -525,10 +532,13 @@ const Admin = () => {
         setDataOrbitAnalyticsDetails(Array.from(sessionMap.values()).sort((a, b) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         ));
+      } else {
+        setDataOrbitAnalytics({ sessions: 0, page_views: 0, clicks: 0 });
+        setDataOrbitAnalyticsDetails([]);
       }
     } catch (error) {
       console.error('Error fetching DataOrbitZone analytics:', error);
-      toast.error('Failed to fetch DataOrbitZone analytics');
+      toast.error('Failed to fetch DataOrbitZone analytics. Check database connection.');
     }
   };
 
