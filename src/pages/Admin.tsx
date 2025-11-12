@@ -499,12 +499,26 @@ const Admin = () => {
       }
 
       if (analyticsData && analyticsData.length > 0) {
-        const isPageViewEvent = (t?: string) => !!t && /page/i.test(t) && /view/i.test(t);
-        const isClickEvent = (t?: string) => !!t && /click/i.test(t);
+        // Log distinct event types for debugging
+        const eventTypes = new Set(analyticsData.map((a: any) => a.event_type));
+        console.log('DataOrbitZone event types:', Array.from(eventTypes));
 
-        const sessions = new Set(analyticsData.map(a => a.session_id)).size;
-        const pageViews = analyticsData.filter(a => isPageViewEvent(a.event_type)).length;
-        const clicks = analyticsData.filter(a => isClickEvent(a.event_type)).length;
+        // Flexible event type matchers
+        const isPageViewEvent = (t?: string) => {
+          if (!t) return false;
+          const lower = t.toLowerCase();
+          return lower.includes('page') || lower === 'view' || lower === 'pageview' || lower === 'page_view';
+        };
+        const isClickEvent = (t?: string) => {
+          if (!t) return false;
+          return t.toLowerCase().includes('click');
+        };
+
+        const sessions = new Set(analyticsData.map((a: any) => a.session_id)).size;
+        const pageViews = analyticsData.filter((a: any) => isPageViewEvent(a.event_type)).length;
+        const clicks = analyticsData.filter((a: any) => isClickEvent(a.event_type)).length;
+
+        console.log('DataOrbitZone totals:', { sessions, pageViews, clicks });
 
         setDataOrbitAnalytics({
           sessions,
@@ -545,9 +559,10 @@ const Admin = () => {
             sessionMap.set(event.session_id, {
               session_id: event.session_id,
               ip_address: event.ip_address || 'unknown',
-              country: event.country || 'WW',
+              country: event.country || 'unknown',
               site_name: event.site_name || 'Unknown',
               device: event.device || 'unknown',
+              source: event.source || 'direct',
               page_views: 0,
               clicks: 0,
               created_at: event.created_at,
@@ -558,11 +573,12 @@ const Admin = () => {
           }
           const session = sessionMap.get(event.session_id);
 
-          // Enrich non-null fields
-          if (event.ip_address && (session.ip_address === 'unknown' || !session.ip_address)) session.ip_address = event.ip_address;
-          if (event.country && (session.country === 'WW' || !session.country)) session.country = event.country;
-          if (event.site_name && (session.site_name === 'Unknown' || !session.site_name)) session.site_name = event.site_name;
-          if (event.device && (session.device === 'unknown' || !session.device)) session.device = event.device;
+          // Enrich with latest non-null values
+          if (event.ip_address && event.ip_address !== 'unknown') session.ip_address = event.ip_address;
+          if (event.country && event.country !== 'unknown') session.country = event.country;
+          if (event.site_name && event.site_name !== 'Unknown') session.site_name = event.site_name;
+          if (event.device && event.device !== 'unknown') session.device = event.device;
+          if (event.source && event.source !== 'direct') session.source = event.source;
 
           // Counters
           if (isPageViewEvent(event.event_type)) session.page_views++;
@@ -1350,6 +1366,55 @@ const Admin = () => {
                             <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs font-semibold">
                               {detail.clicks}
                             </span>
+                          </td>
+                          <td className="p-4">
+                            {(detail.related_search_breakdown?.length > 0 || detail.blog_clicks_breakdown?.length > 0) ? (
+                              <details className="cursor-pointer">
+                                <summary className="text-xs text-blue-600 hover:text-blue-800 font-semibold">
+                                  View breakdown
+                                </summary>
+                                <div className="mt-2 space-y-2 max-w-md">
+                                  {detail.related_search_breakdown?.length > 0 && (
+                                    <div>
+                                      <p className="text-xs font-semibold text-gray-700 mb-1">Related Searches:</p>
+                                      {detail.related_search_breakdown.map((item: any, idx: number) => (
+                                        <div key={idx} className="bg-green-50 p-2 rounded text-xs">
+                                          <span className="font-medium">{item.search_term}</span>
+                                          <div className="flex gap-2 mt-1">
+                                            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded">
+                                              Total: {item.click_count}
+                                            </span>
+                                            <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded">
+                                              Unique: {item.unique_clicks}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  {detail.blog_clicks_breakdown?.length > 0 && (
+                                    <div>
+                                      <p className="text-xs font-semibold text-gray-700 mb-1">Blog Clicks:</p>
+                                      {detail.blog_clicks_breakdown.map((item: any, idx: number) => (
+                                        <div key={idx} className="bg-orange-50 p-2 rounded text-xs">
+                                          <span className="font-medium">{item.blog_title}</span>
+                                          <div className="flex gap-2 mt-1">
+                                            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded">
+                                              Total: {item.click_count}
+                                            </span>
+                                            <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded">
+                                              Unique: {item.unique_clicks}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </details>
+                            ) : (
+                              <span className="text-xs text-gray-400">No details</span>
+                            )}
                           </td>
                           <td className="p-4 text-sm">
                             {new Date(detail.created_at).toLocaleString()}
