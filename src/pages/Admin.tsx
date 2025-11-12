@@ -499,9 +499,12 @@ const Admin = () => {
       }
 
       if (analyticsData && analyticsData.length > 0) {
+        const isPageViewEvent = (t?: string) => !!t && /page/i.test(t) && /view/i.test(t);
+        const isClickEvent = (t?: string) => !!t && /click/i.test(t);
+
         const sessions = new Set(analyticsData.map(a => a.session_id)).size;
-        const pageViews = analyticsData.filter(a => a.event_type === 'page_view').length;
-        const clicks = analyticsData.filter(a => a.event_type === 'click').length;
+        const pageViews = analyticsData.filter(a => isPageViewEvent(a.event_type)).length;
+        const clicks = analyticsData.filter(a => isClickEvent(a.event_type)).length;
 
         setDataOrbitAnalytics({
           sessions,
@@ -525,8 +528,8 @@ const Admin = () => {
             });
           }
           const session = sessionMap.get(event.session_id);
-          if (event.event_type === 'page_view') session.page_views++;
-          if (event.event_type === 'click') session.clicks++;
+          if (isPageViewEvent(event.event_type)) session.page_views++;
+          if (isClickEvent(event.event_type)) session.clicks++;
         });
 
         setDataOrbitAnalyticsDetails(Array.from(sessionMap.values()).sort((a, b) => 
