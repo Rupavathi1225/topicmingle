@@ -512,9 +512,35 @@ const Admin = () => {
           clicks
         });
 
-        // Group by session
-        const sessionMap = new Map();
-        analyticsData.forEach(event => {
+        // Build lookup maps for names
+        const relatedSearchIds = Array.from(new Set(
+          analyticsData.filter((e: any) => !!e.related_search_id).map((e: any) => e.related_search_id)
+        ));
+        const blogIds = Array.from(new Set(
+          analyticsData.filter((e: any) => !!e.blog_id).map((e: any) => e.blog_id)
+        ));
+
+        const relatedSearchMap = new Map<string, string>();
+        if (relatedSearchIds.length > 0) {
+          const { data: rsData } = await dataOrbitZoneClient
+            .from('related_searches')
+            .select('id, search_text')
+            .in('id', relatedSearchIds);
+          rsData?.forEach((r: any) => relatedSearchMap.set(r.id, r.search_text));
+        }
+
+        const blogMap = new Map<string, string>();
+        if (blogIds.length > 0) {
+          const { data: bData } = await dataOrbitZoneClient
+            .from('blogs')
+            .select('id, title')
+            .in('id', blogIds);
+          bData?.forEach((b: any) => blogMap.set(b.id, b.title));
+        }
+
+        // Group by session with enrichment and breakdowns
+        const sessionMap = new Map<string, any>();
+        analyticsData.forEach((event: any) => {
           if (!sessionMap.has(event.session_id)) {
             sessionMap.set(event.session_id, {
               session_id: event.session_id,
@@ -524,15 +550,66 @@ const Admin = () => {
               device: event.device || 'unknown',
               page_views: 0,
               clicks: 0,
-              created_at: event.created_at
+              created_at: event.created_at,
+              last_active: event.created_at,
+              related_search_clicks: new Map<string, { clicks: number; uniques: Set<string> }>(),
+              blog_clicks: new Map<string, { clicks: number; uniques: Set<string> }>(),
             });
           }
           const session = sessionMap.get(event.session_id);
+
+          // Enrich non-null fields
+          if (event.ip_address && (session.ip_address === 'unknown' || !session.ip_address)) session.ip_address = event.ip_address;
+          if (event.country && (session.country === 'WW' || !session.country)) session.country = event.country;
+          if (event.site_name && (session.site_name === 'Unknown' || !session.site_name)) session.site_name = event.site_name;
+          if (event.device && (session.device === 'unknown' || !session.device)) session.device = event.device;
+
+          // Counters
           if (isPageViewEvent(event.event_type)) session.page_views++;
           if (isClickEvent(event.event_type)) session.clicks++;
+
+          // Breakdowns
+          const uniqueKey = event.ip_address || event.session_id;
+          if (isClickEvent(event.event_type) && event.related_search_id) {
+            const term = relatedSearchMap.get(event.related_search_id) || 'Unknown';
+            if (!session.related_search_clicks.has(term)) {
+              session.related_search_clicks.set(term, { clicks: 0, uniques: new Set<string>() });
+            }
+            const entry = session.related_search_clicks.get(term)!;
+            entry.clicks += 1;
+            entry.uniques.add(uniqueKey);
+          }
+          if (isClickEvent(event.event_type) && event.blog_id) {
+            const title = blogMap.get(event.blog_id) || 'Unknown';
+            if (!session.blog_clicks.has(title)) {
+              session.blog_clicks.set(title, { clicks: 0, uniques: new Set<string>() });
+            }
+            const entry = session.blog_clicks.get(title)!;
+            entry.clicks += 1;
+            entry.uniques.add(uniqueKey);
+          }
+
+          // Update last active
+          if (new Date(event.created_at).getTime() > new Date(session.last_active).getTime()) {
+            session.last_active = event.created_at;
+          }
         });
 
-        setDataOrbitAnalyticsDetails(Array.from(sessionMap.values()).sort((a, b) => 
+        const details = Array.from(sessionMap.values()).map((s: any) => ({
+          ...s,
+          related_search_breakdown: Array.from(s.related_search_clicks.entries()).map(([search_term, val]: any) => ({
+            search_term,
+            click_count: val.clicks,
+            unique_clicks: val.uniques.size,
+          })),
+          blog_clicks_breakdown: Array.from(s.blog_clicks.entries()).map(([blog_title, val]: any) => ({
+            blog_title,
+            click_count: val.clicks,
+            unique_clicks: val.uniques.size,
+          })),
+        }));
+
+        setDataOrbitAnalyticsDetails(details.sort((a: any, b: any) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         ));
       } else {
@@ -1238,6 +1315,7 @@ const Admin = () => {
                       <th className="text-left p-4 font-semibold">Device</th>
                       <th className="text-left p-4 font-semibold">Page Views</th>
                       <th className="text-left p-4 font-semibold">Clicks</th>
+                      <th className="text-left p-4 font-semibold">Details</th>
                       <th className="text-left p-4 font-semibold">Created At</th>
                     </tr>
                   </thead>
