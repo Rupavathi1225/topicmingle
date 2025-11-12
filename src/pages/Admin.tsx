@@ -122,7 +122,6 @@ const Admin = () => {
     }
   };
 
-
   useEffect(() => {
     fetchCategories();
     fetchBlogs();
@@ -130,7 +129,6 @@ const Admin = () => {
     fetchAnalytics();
     fetchDataOrbitAnalytics();
   }, []);
-
 
   const fetchCategories = async () => {
     const { data } = await supabase
@@ -486,6 +484,8 @@ const Admin = () => {
 
   const fetchDataOrbitAnalytics = async () => {
     try {
+      console.log('🔍 Fetching DataOrbitZone analytics...');
+      
       // Fetch all analytics data
       const { data: analyticsData, error } = await dataOrbitZoneClient
         .from("analytics")
@@ -493,32 +493,61 @@ const Admin = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('DataOrbitZone fetch error:', error);
+        console.error('❌ DataOrbitZone fetch error:', error);
         toast.error('Failed to fetch DataOrbitZone analytics. Check RLS policies.');
         return;
       }
 
-      if (analyticsData && analyticsData.length > 0) {
-        // Log distinct event types for debugging
-        const eventTypes = new Set(analyticsData.map((a: any) => a.event_type));
-        console.log('DataOrbitZone event types:', Array.from(eventTypes));
+      console.log(`✅ Fetched ${analyticsData?.length || 0} analytics records`);
 
-        // Flexible event type matchers
-        const isPageViewEvent = (t?: string) => {
-          if (!t) return false;
-          const lower = t.toLowerCase();
-          return lower.includes('page') || lower === 'view' || lower === 'pageview' || lower === 'page_view';
+      if (analyticsData && analyticsData.length > 0) {
+        // Log all unique event types for debugging
+        const eventTypes = new Set(analyticsData.map((a: any) => a.event_type));
+        console.log('📊 Event types found:', Array.from(eventTypes));
+
+        // Log sample events with ALL fields to debug
+        console.log('📝 Sample events (full data):', analyticsData.slice(0, 2));
+        console.log('📝 Sample events (filtered):', analyticsData.slice(0, 3).map(e => ({
+          event_type: e.event_type,
+          ip_address: e.ip_address,
+          country: e.country,
+          site_name: e.site_name,
+          page_url: e.page_url,
+          url: e.url,
+          referrer: e.referrer,
+          device: e.device,
+          source: e.source
+        })));
+
+        // More flexible event type matchers - match ANY event type containing these keywords
+        const isPageViewEvent = (eventType?: string) => {
+          if (!eventType) return false;
+          const lower = eventType.toLowerCase().trim();
+          // Match: page_view, pageview, page-view, view, page, etc.
+          return lower.includes('page') || 
+                 lower.includes('view') || 
+                 lower === 'page_view' || 
+                 lower === 'pageview';
         };
-        const isClickEvent = (t?: string) => {
-          if (!t) return false;
-          return t.toLowerCase().includes('click');
+
+        const isClickEvent = (eventType?: string) => {
+          if (!eventType) return false;
+          const lower = eventType.toLowerCase().trim();
+          return lower.includes('click');
         };
+
+        // Count events
+        const pageViewEvents = analyticsData.filter((a: any) => isPageViewEvent(a.event_type));
+        const clickEvents = analyticsData.filter((a: any) => isClickEvent(a.event_type));
+        
+        console.log('📈 Page view events:', pageViewEvents.length);
+        console.log('🖱️  Click events:', clickEvents.length);
 
         const sessions = new Set(analyticsData.map((a: any) => a.session_id)).size;
-        const pageViews = analyticsData.filter((a: any) => isPageViewEvent(a.event_type)).length;
-        const clicks = analyticsData.filter((a: any) => isClickEvent(a.event_type)).length;
+        const pageViews = pageViewEvents.length;
+        const clicks = clickEvents.length;
 
-        console.log('DataOrbitZone totals:', { sessions, pageViews, clicks });
+        console.log('📊 Final totals:', { sessions, pageViews, clicks });
 
         setDataOrbitAnalytics({
           sessions,
@@ -552,15 +581,60 @@ const Admin = () => {
           bData?.forEach((b: any) => blogMap.set(b.id, b.title));
         }
 
+        // Helper function to extract domain from URL - now checks multiple URL fields
+        const extractSiteName = (event: any) => {
+          // Try multiple possible URL field names
+          const urlFields = [event.page_url, event.url, event.referrer];
+          
+          for (const urlField of urlFields) {
+            if (!urlField || typeof urlField !== 'string') continue;
+            
+            try {
+              // If it's already a full URL
+              if (urlField.startsWith('http://') || urlField.startsWith('https://')) {
+                const urlObj = new URL(urlField);
+                const hostname = urlObj.hostname.replace(/^www\./, '');
+                if (hostname && hostname !== '') return hostname;
+              }
+              // If it's just a domain
+              else if (urlField.includes('.')) {
+                const cleaned = urlField.replace(/^www\./, '').split('/')[0];
+                if (cleaned && cleaned !== '') return cleaned;
+              }
+            } catch (error) {
+              console.log('Error parsing URL:', urlField, error);
+            }
+          }
+          
+          return null;
+        };
+
         // Group by session with enrichment and breakdowns
         const sessionMap = new Map<string, any>();
         analyticsData.forEach((event: any) => {
           if (!sessionMap.has(event.session_id)) {
+            // Extract site name from multiple possible sources
+            let siteName = 'Unknown';
+            
+            // First try the site_name field
+            if (event.site_name && event.site_name.trim() !== '' && event.site_name !== 'Unknown') {
+              siteName = event.site_name;
+            } else {
+              // Try extracting from URLs
+              const extracted = extractSiteName(event);
+              if (extracted) {
+                siteName = extracted;
+              }
+            }
+            
+            console.log(`Session ${event.session_id.slice(0, 8)}: site_name="${event.site_name}" -> resolved to "${siteName}"`);
+            
+            // Initialize with first event's data - use actual values, not defaults
             sessionMap.set(event.session_id, {
               session_id: event.session_id,
               ip_address: event.ip_address || 'unknown',
               country: event.country || 'unknown',
-              site_name: event.site_name || 'Unknown',
+              site_name: siteName,
               device: event.device || 'unknown',
               source: event.source || 'direct',
               page_views: 0,
@@ -573,19 +647,39 @@ const Admin = () => {
           }
           const session = sessionMap.get(event.session_id);
 
-          // Enrich with latest non-null values
-          if (event.ip_address && event.ip_address !== 'unknown') session.ip_address = event.ip_address;
-          if (event.country && event.country !== 'unknown') session.country = event.country;
-          if (event.site_name && event.site_name !== 'Unknown') session.site_name = event.site_name;
-          if (event.device && event.device !== 'unknown') session.device = event.device;
-          if (event.source && event.source !== 'direct') session.source = event.source;
+          // Enrich with ANY non-null/non-empty values from subsequent events
+          if (event.ip_address && event.ip_address.trim() !== '' && event.ip_address !== 'unknown') {
+            session.ip_address = event.ip_address;
+          }
+          if (event.country && event.country.trim() !== '' && event.country !== 'unknown') {
+            session.country = event.country;
+          }
+          // For site_name, try multiple sources
+          if (event.site_name && event.site_name.trim() !== '' && event.site_name !== 'Unknown') {
+            session.site_name = event.site_name;
+          } else if (session.site_name === 'Unknown') {
+            const extracted = extractSiteName(event);
+            if (extracted) {
+              session.site_name = extracted;
+            }
+          }
+          if (event.device && event.device.trim() !== '' && event.device !== 'unknown') {
+            session.device = event.device;
+          }
+          if (event.source && event.source.trim() !== '' && event.source !== 'direct') {
+            session.source = event.source;
+          }
 
-          // Counters
-          if (isPageViewEvent(event.event_type)) session.page_views++;
-          if (isClickEvent(event.event_type)) session.clicks++;
+          // Counters - using the same flexible matching
+          if (isPageViewEvent(event.event_type)) {
+            session.page_views++;
+          }
+          if (isClickEvent(event.event_type)) {
+            session.clicks++;
+          }
 
           // Breakdowns
-          const uniqueKey = event.ip_address || event.session_id;
+          const uniqueKey = (event.ip_address && event.ip_address !== 'unknown') ? event.ip_address : event.session_id;
           if (isClickEvent(event.event_type) && event.related_search_id) {
             const term = relatedSearchMap.get(event.related_search_id) || 'Unknown';
             if (!session.related_search_clicks.has(term)) {
@@ -625,15 +719,19 @@ const Admin = () => {
           })),
         }));
 
+        console.log(`✅ Processed ${details.length} session details`);
+        console.log('📋 Sample session detail:', details[0]);
+        
         setDataOrbitAnalyticsDetails(details.sort((a: any, b: any) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         ));
       } else {
+        console.log('⚠️  No analytics data found');
         setDataOrbitAnalytics({ sessions: 0, page_views: 0, clicks: 0 });
         setDataOrbitAnalyticsDetails([]);
       }
     } catch (error) {
-      console.error('Error fetching DataOrbitZone analytics:', error);
+      console.error('❌ Error fetching DataOrbitZone analytics:', error);
       toast.error('Failed to fetch DataOrbitZone analytics. Check database connection.');
     }
   };
@@ -892,6 +990,12 @@ const Admin = () => {
                   </form>
                 </DialogContent>
               </Dialog>
+            )}
+
+            {activeTab === 'dataorbit-analytics' && (
+              <Button onClick={fetchDataOrbitAnalytics} variant="outline">
+                🔄 Refresh Analytics
+              </Button>
             )}
           </div>
         </div>
@@ -1302,15 +1406,15 @@ const Admin = () => {
                   </Select>
                 </div>
                 <div className="flex-1">
-                  <Label>Site Name</Label>
+                  <Label>Source</Label>
                   <Select value={dataOrbitSelectedSiteName} onValueChange={setDataOrbitSelectedSiteName}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Sites</SelectItem>
-                      {Array.from(new Set(dataOrbitAnalyticsDetails.map(d => d.site_name))).map(site => (
-                        <SelectItem key={site} value={site}>{site}</SelectItem>
+                      <SelectItem value="all">All Sources</SelectItem>
+                      {Array.from(new Set(dataOrbitAnalyticsDetails.map(d => d.source))).map(source => (
+                        <SelectItem key={source} value={source}>{source}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -1327,11 +1431,12 @@ const Admin = () => {
                       <th className="text-left p-4 font-semibold">Session ID</th>
                       <th className="text-left p-4 font-semibold">IP Address</th>
                       <th className="text-left p-4 font-semibold">Country</th>
-                      <th className="text-left p-4 font-semibold">Site Name</th>
+                      <th className="text-left p-4 font-semibold">Source</th>
                       <th className="text-left p-4 font-semibold">Device</th>
                       <th className="text-left p-4 font-semibold">Page Views</th>
                       <th className="text-left p-4 font-semibold">Clicks</th>
-                      <th className="text-left p-4 font-semibold">Details</th>
+                      <th className="text-left p-4 font-semibold">Related Searches</th>
+                      <th className="text-left p-4 font-semibold">Blog Clicks</th>
                       <th className="text-left p-4 font-semibold">Created At</th>
                     </tr>
                   </thead>
@@ -1339,8 +1444,8 @@ const Admin = () => {
                     {dataOrbitAnalyticsDetails
                       .filter(detail => {
                         const countryMatch = dataOrbitSelectedCountry === 'all' || detail.country === dataOrbitSelectedCountry;
-                        const siteMatch = dataOrbitSelectedSiteName === 'all' || detail.site_name === dataOrbitSelectedSiteName;
-                        return countryMatch && siteMatch;
+                        const sourceMatch = dataOrbitSelectedSiteName === 'all' || detail.source === dataOrbitSelectedSiteName;
+                        return countryMatch && sourceMatch;
                       })
                       .map((detail, index) => (
                         <tr key={index} className="border-b last:border-0 hover:bg-muted/50">
@@ -1353,7 +1458,7 @@ const Admin = () => {
                           </td>
                           <td className="p-4">
                             <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
-                              {detail.site_name}
+                              {detail.source}
                             </span>
                           </td>
                           <td className="p-4 text-sm">{detail.device}</td>
@@ -1368,52 +1473,69 @@ const Admin = () => {
                             </span>
                           </td>
                           <td className="p-4">
-                            {(detail.related_search_breakdown?.length > 0 || detail.blog_clicks_breakdown?.length > 0) ? (
-                              <details className="cursor-pointer">
-                                <summary className="text-xs text-blue-600 hover:text-blue-800 font-semibold">
-                                  View breakdown
-                                </summary>
-                                <div className="mt-2 space-y-2 max-w-md">
-                                  {detail.related_search_breakdown?.length > 0 && (
-                                    <div>
-                                      <p className="text-xs font-semibold text-gray-700 mb-1">Related Searches:</p>
-                                      {detail.related_search_breakdown.map((item: any, idx: number) => (
-                                        <div key={idx} className="bg-green-50 p-2 rounded text-xs">
-                                          <span className="font-medium">{item.search_term}</span>
-                                          <div className="flex gap-2 mt-1">
-                                            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded">
+                            {detail.related_search_breakdown?.length > 0 ? (
+                              <div className="flex flex-col gap-1">
+                                <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold text-center">
+                                  Total: {detail.related_search_breakdown.reduce((sum: number, item: any) => sum + item.click_count, 0)}
+                                </span>
+                                <details className="mt-1">
+                                  <summary className="cursor-pointer text-xs text-blue-600 hover:text-blue-800 font-semibold">
+                                    View breakdown
+                                  </summary>
+                                  <div className="mt-2 space-y-1 max-w-md">
+                                    {detail.related_search_breakdown.map((item: any, idx: number) => (
+                                      <div key={idx} className="bg-green-50 p-2 rounded text-xs">
+                                        <div className="flex justify-between items-center gap-2">
+                                          <span className="font-medium flex-1">{item.search_term}</span>
+                                          <div className="flex gap-2">
+                                            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-semibold">
                                               Total: {item.click_count}
                                             </span>
-                                            <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded">
+                                            <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-semibold">
                                               Unique: {item.unique_clicks}
                                             </span>
                                           </div>
                                         </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                  {detail.blog_clicks_breakdown?.length > 0 && (
-                                    <div>
-                                      <p className="text-xs font-semibold text-gray-700 mb-1">Blog Clicks:</p>
-                                      {detail.blog_clicks_breakdown.map((item: any, idx: number) => (
-                                        <div key={idx} className="bg-orange-50 p-2 rounded text-xs">
-                                          <span className="font-medium">{item.blog_title}</span>
-                                          <div className="flex gap-2 mt-1">
-                                            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded">
-                                              Total: {item.click_count}
-                                            </span>
-                                            <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded">
-                                              Unique: {item.unique_clicks}
-                                            </span>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              </details>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </details>
+                              </div>
                             ) : (
-                              <span className="text-xs text-gray-400">No details</span>
+                              <span className="text-xs text-gray-400">No clicks</span>
+                            )}
+                          </td>
+                          <td className="p-4">
+                            {detail.blog_clicks_breakdown?.length > 0 ? (
+                              <div className="flex flex-col gap-1">
+                                <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs font-semibold text-center">
+                                  Total: {detail.blog_clicks_breakdown.reduce((sum: number, item: any) => sum + item.click_count, 0)}
+                                </span>
+                                <details className="mt-1">
+                                  <summary className="cursor-pointer text-xs text-blue-600 hover:text-blue-800 font-semibold">
+                                    View breakdown
+                                  </summary>
+                                  <div className="mt-2 space-y-1 max-w-md">
+                                    {detail.blog_clicks_breakdown.map((item: any, idx: number) => (
+                                      <div key={idx} className="bg-orange-50 p-2 rounded text-xs">
+                                        <div className="flex justify-between items-center gap-2">
+                                          <span className="font-medium flex-1">{item.blog_title}</span>
+                                          <div className="flex gap-2">
+                                            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-semibold">
+                                              Total: {item.click_count}
+                                            </span>
+                                            <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-semibold">
+                                              Unique: {item.unique_clicks}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </details>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-400">No clicks</span>
                             )}
                           </td>
                           <td className="p-4 text-sm">
