@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Trash2, Edit, Plus } from "lucide-react";
+import { Trash2, Edit, Plus, Cloud } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -22,11 +22,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface Category {
   id: number;
   name: string;
   slug: string;
+  code_range?: string;
 }
 
 interface Blog {
@@ -40,17 +44,45 @@ interface Blog {
   status: string;
   published_at: string;
   serial_number: number;
+  author_bio?: string;
+  author_image?: string;
 }
 
 interface RelatedSearch {
   id: string;
-  category_id: number;
+  category_id?: number;
+  blog_id?: string;
   search_text: string;
+  target_url?: string;
   display_order: number;
-  is_active: boolean;
-  allowed_countries: string[];
+  is_active?: boolean;
+  allowed_countries?: string[];
   session_id?: string;
   ip_address?: string;
+}
+
+interface PrelandingPage {
+  id: string;
+  related_search_id: string;
+  logo_url: string | null;
+  logo_position: string;
+  logo_size: number;
+  main_image_url: string | null;
+  image_ratio: string;
+  headline: string;
+  description: string;
+  headline_font_size: number;
+  headline_color: string;
+  description_font_size: number;
+  description_color: string;
+  text_alignment: string;
+  email_box_color: string;
+  email_box_border_color: string;
+  button_text: string;
+  button_color: string;
+  button_text_color: string;
+  background_color: string;
+  background_image_url: string | null;
 }
 
 interface AnalyticsDetail {
@@ -78,6 +110,13 @@ const Admin = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [relatedSearches, setRelatedSearches] = useState<RelatedSearch[]>([]);
+  
+  // DataOrbitZone state
+  const [dzCategories, setDzCategories] = useState<Category[]>([]);
+  const [dzBlogs, setDzBlogs] = useState<Blog[]>([]);
+  const [dzRelatedSearches, setDzRelatedSearches] = useState<RelatedSearch[]>([]);
+  const [dzPrelandingPages, setDzPrelandingPages] = useState<PrelandingPage[]>([]);
+  
   const [analytics, setAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
   const [dataOrbitAnalytics, setDataOrbitAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
   const [activeTab, setActiveTab] = useState<'blogs' | 'searches' | 'analytics' | 'dataorbit-analytics'>('blogs');
