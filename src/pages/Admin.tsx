@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { dataOrbitZoneClient } from "@/integrations/dataorbitzone/client";
+import { searchProjectClient } from "@/integrations/searchproject/client";
 import { useTracking } from "@/hooks/useTracking";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -119,7 +120,8 @@ const Admin = () => {
   
   const [analytics, setAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
   const [dataOrbitAnalytics, setDataOrbitAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
-  const [activeTab, setActiveTab] = useState<'blogs' | 'searches' | 'analytics' | 'dataorbit-analytics'>('blogs');
+  const [searchProjectAnalytics, setSearchProjectAnalytics] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'blogs' | 'searches' | 'analytics' | 'dataorbit-analytics' | 'searchproject-analytics'>('blogs');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
   const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
@@ -167,6 +169,7 @@ const Admin = () => {
     fetchRelatedSearches();
     fetchAnalytics();
     fetchDataOrbitAnalytics();
+    fetchSearchProjectAnalytics();
   }, []);
 
   const fetchCategories = async () => {
@@ -775,6 +778,23 @@ const Admin = () => {
     }
   };
 
+  const fetchSearchProjectAnalytics = async () => {
+    try {
+      const { data: analyticsData, error } = await searchProjectClient
+        .from('analytics')
+        .select('*')
+        .order('timestamp', { ascending: false });
+
+      if (error) throw error;
+
+      console.log('SearchProject Analytics:', analyticsData);
+      setSearchProjectAnalytics(analyticsData || []);
+    } catch (error) {
+      console.error('Error fetching SearchProject analytics:', error);
+      toast.error('Failed to fetch SearchProject analytics');
+    }
+  };
+
   const resetSearchForm = () => {
     setSearchFormData({
       category_id: "",
@@ -1080,6 +1100,16 @@ const Admin = () => {
             }`}
           >
             DataOrbitZone Analytics
+          </button>
+          <button
+            onClick={() => setActiveTab('searchproject-analytics')}
+            className={`px-4 py-2 font-semibold transition-colors ${
+              activeTab === 'searchproject-analytics'
+                ? 'border-b-2 border-accent text-accent'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            SearchProject Analytics
           </button>
         </div>
 
@@ -1582,6 +1612,105 @@ const Admin = () => {
                           </td>
                         </tr>
                       ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SearchProject Analytics Dashboard */}
+        {activeTab === 'searchproject-analytics' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+              <div className="bg-card rounded-lg border p-6">
+                <h3 className="text-lg font-semibold mb-2">Total Sessions</h3>
+                <p className="text-4xl font-bold text-accent">{searchProjectAnalytics.length}</p>
+              </div>
+              <div className="bg-card rounded-lg border p-6">
+                <h3 className="text-lg font-semibold mb-2">Page Views</h3>
+                <p className="text-4xl font-bold text-accent">
+                  {searchProjectAnalytics.reduce((sum, s) => sum + (s.page_views || 0), 0)}
+                </p>
+              </div>
+              <div className="bg-card rounded-lg border p-6">
+                <h3 className="text-lg font-semibold mb-2">Clicks</h3>
+                <p className="text-4xl font-bold text-accent">
+                  {searchProjectAnalytics.reduce((sum, s) => sum + (s.clicks || 0), 0)}
+                </p>
+              </div>
+              <div className="bg-card rounded-lg border p-6">
+                <h3 className="text-lg font-semibold mb-2">Related Searches</h3>
+                <p className="text-4xl font-bold text-accent">
+                  {searchProjectAnalytics.reduce((sum, s) => sum + (s.related_searches || 0), 0)}
+                </p>
+              </div>
+              <div className="bg-card rounded-lg border p-6">
+                <h3 className="text-lg font-semibold mb-2">Result Clicks</h3>
+                <p className="text-4xl font-bold text-accent">
+                  {searchProjectAnalytics.reduce((sum, s) => sum + (s.result_clicks || 0), 0)}
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-card rounded-lg border">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="border-b">
+                    <tr>
+                      <th className="text-left p-4 font-semibold">Session ID</th>
+                      <th className="text-left p-4 font-semibold">IP Address</th>
+                      <th className="text-left p-4 font-semibold">Country</th>
+                      <th className="text-left p-4 font-semibold">Device</th>
+                      <th className="text-left p-4 font-semibold">Source</th>
+                      <th className="text-left p-4 font-semibold">Page Views</th>
+                      <th className="text-left p-4 font-semibold">Clicks</th>
+                      <th className="text-left p-4 font-semibold">Related Searches</th>
+                      <th className="text-left p-4 font-semibold">Result Clicks</th>
+                      <th className="text-left p-4 font-semibold">Time Spent (s)</th>
+                      <th className="text-left p-4 font-semibold">Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {searchProjectAnalytics.map((session) => (
+                      <tr key={session.id} className="border-b last:border-0 hover:bg-muted/50">
+                        <td className="p-4 text-sm font-mono">{session.session_id.substring(0, 8)}...</td>
+                        <td className="p-4 text-sm">{session.ip_address || '-'}</td>
+                        <td className="p-4">
+                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                            {session.country || '-'}
+                          </span>
+                        </td>
+                        <td className="p-4 text-sm">{session.device || '-'}</td>
+                        <td className="p-4">
+                          <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                            {session.source || '-'}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
+                            {session.page_views || 0}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs font-semibold">
+                            {session.clicks || 0}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-semibold">
+                            {session.related_searches || 0}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold">
+                            {session.result_clicks || 0}
+                          </span>
+                        </td>
+                        <td className="p-4 text-sm">{session.time_spent || 0}</td>
+                        <td className="p-4 text-sm">{new Date(session.timestamp).toLocaleString()}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
