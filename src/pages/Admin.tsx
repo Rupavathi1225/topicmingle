@@ -26,6 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { UnifiedAnalytics } from "@/components/admin/UnifiedAnalytics";
 
 interface Category {
   id: number;
@@ -121,7 +122,7 @@ const Admin = () => {
   const [analytics, setAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
   const [dataOrbitAnalytics, setDataOrbitAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
   const [searchProjectAnalytics, setSearchProjectAnalytics] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'blogs' | 'searches' | 'analytics' | 'dataorbit-analytics' | 'searchproject-analytics'>('blogs');
+  const [activeTab, setActiveTab] = useState<'blogs' | 'searches' | 'analytics' | 'dataorbit-analytics' | 'searchproject-analytics' | 'unified-analytics'>('unified-analytics');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
   const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
@@ -1060,7 +1061,17 @@ const Admin = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-4 mb-6 border-b">
+        <div className="flex gap-4 mb-6 border-b overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('unified-analytics')}
+            className={`px-4 py-2 font-semibold transition-colors whitespace-nowrap ${
+              activeTab === 'unified-analytics'
+                ? 'border-b-2 border-accent text-accent'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            🌐 Multi-Site Analytics
+          </button>
           <button
             onClick={() => setActiveTab('blogs')}
             className={`px-4 py-2 font-semibold transition-colors ${
@@ -1112,6 +1123,9 @@ const Admin = () => {
             SearchProject Analytics
           </button>
         </div>
+
+        {/* Unified Analytics Dashboard */}
+        {activeTab === 'unified-analytics' && <UnifiedAnalytics />}
 
         {/* Blogs Table */}
         {activeTab === 'blogs' && (
