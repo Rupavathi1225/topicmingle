@@ -588,15 +588,32 @@ const Admin = () => {
 
         const sessions = new Set(analyticsData.map((a: any) => a.session_id)).size;
         const pageViews = pageViewEvents.length;
-        const clicks = clickEvents.length;
+const clicks = clickEvents.length;
 
-        console.log('📊 Final totals:', { sessions, pageViews, clicks });
+// 🆕 Calculate UNIQUE pages
+const uniquePages = new Set(
+  pageViewEvents
+    .map((e: any) => e.page_url)
+    .filter((url: any) => url && url.trim() !== "")
+).size;
 
-        setDataOrbitAnalytics({
-          sessions,
-          page_views: pageViews,
-          clicks
-        });
+// 🆕 Calculate UNIQUE clicks
+const uniqueClicks = new Set(
+  clickEvents
+    .map((e: any) => e.button_id)
+    .filter((id: any) => id && id.trim() !== "")
+).size;
+
+console.log('📊 Final totals:', { sessions, pageViews, clicks, uniquePages, uniqueClicks });
+
+setDataOrbitAnalytics({
+  sessions,
+  page_views: pageViews,
+  unique_pages: uniquePages,   // 🆕
+  clicks,
+  unique_clicks: uniqueClicks  // 🆕
+});
+
 
         // Build lookup maps for names
         const relatedSearchIds = Array.from(new Set(
@@ -1120,7 +1137,7 @@ const Admin = () => {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            SearchProject Analytics
+            minglemoody
           </button>
         </div>
 
