@@ -12,6 +12,7 @@ interface WebResult {
   id: string;
   title: string;
   description?: string;
+  logo_url?: string;
   target_url: string;
   page_number: number;
   position: number;
@@ -32,6 +33,7 @@ export const WebResultsManager = ({ projectClient, projectName }: WebResultsMana
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    logo_url: '',
     target_url: '',
     page_number: 1,
     position: 1,
@@ -64,6 +66,7 @@ export const WebResultsManager = ({ projectClient, projectName }: WebResultsMana
     const payload = {
       ...formData,
       description: formData.description || null,
+      logo_url: formData.logo_url || null,
       pre_landing_page_key: formData.pre_landing_page_key || null,
     };
 
@@ -101,6 +104,7 @@ export const WebResultsManager = ({ projectClient, projectName }: WebResultsMana
     setFormData({
       title: result.title,
       description: result.description || '',
+      logo_url: result.logo_url || '',
       target_url: result.target_url,
       page_number: result.page_number,
       position: result.position,
@@ -128,6 +132,7 @@ export const WebResultsManager = ({ projectClient, projectName }: WebResultsMana
     setFormData({
       title: '',
       description: '',
+      logo_url: '',
       target_url: '',
       page_number: 1,
       position: 1,
@@ -228,6 +233,18 @@ export const WebResultsManager = ({ projectClient, projectName }: WebResultsMana
                 placeholder="Short description of the web result..."
                 rows={3}
               />
+            </div>
+
+            <div>
+              <Label>Logo URL</Label>
+              <Input
+                value={formData.logo_url}
+                onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
+                placeholder="https://example.com/logo.png"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Optional logo/icon to display with the web result
+              </p>
             </div>
 
             <div>

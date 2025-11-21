@@ -358,6 +358,7 @@ export type Database = {
           id: string
           is_active: boolean
           is_sponsored: boolean | null
+          logo_url: string | null
           page_number: number
           position: number
           pre_landing_page_key: string | null
@@ -371,6 +372,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_sponsored?: boolean | null
+          logo_url?: string | null
           page_number?: number
           position?: number
           pre_landing_page_key?: string | null
@@ -384,6 +386,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_sponsored?: boolean | null
+          logo_url?: string | null
           page_number?: number
           position?: number
           pre_landing_page_key?: string | null
