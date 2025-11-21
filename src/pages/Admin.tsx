@@ -48,6 +48,7 @@ interface Blog {
   serial_number: number;
   author_bio?: string;
   author_image?: string;
+  created_at?: string;
 }
 
 interface RelatedSearch {
@@ -120,6 +121,18 @@ const Admin = () => {
   const [dzBlogs, setDzBlogs] = useState<Blog[]>([]);
   const [dzRelatedSearches, setDzRelatedSearches] = useState<RelatedSearch[]>([]);
   const [dzPrelandingPages, setDzPrelandingPages] = useState<PrelandingPage[]>([]);
+  const [dzBlogDialog, setDzBlogDialog] = useState(false);
+  const [editingDzBlog, setEditingDzBlog] = useState<Blog | null>(null);
+  const [dzSearchDialog, setDzSearchDialog] = useState(false);
+  const [editingDzSearch, setEditingDzSearch] = useState<RelatedSearch | null>(null);
+  
+  // SearchProject state
+  const [spWebResults, setSpWebResults] = useState<any[]>([]);
+  const [spLandingPages, setSpLandingPages] = useState<any[]>([]);
+  const [spWebResultDialog, setSpWebResultDialog] = useState(false);
+  const [editingSpWebResult, setEditingSpWebResult] = useState<any>(null);
+  const [spLandingDialog, setSpLandingDialog] = useState(false);
+  const [editingSpLanding, setEditingSpLanding] = useState<any>(null);
   
   const [analytics, setAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
   const [dataOrbitAnalytics, setDataOrbitAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
@@ -166,6 +179,28 @@ const Admin = () => {
     }
   };
 
+  // Fetch DataOrbitZone content
+  const fetchDzBlogs = async () => {
+    const { data } = await dataOrbitZoneClient.from('blogs').select('*').order('created_at', { ascending: false });
+    if (data) setDzBlogs(data);
+  };
+
+  const fetchDzRelatedSearches = async () => {
+    const { data } = await dataOrbitZoneClient.from('related_searches').select('*').order('display_order');
+    if (data) setDzRelatedSearches(data);
+  };
+
+  // Fetch SearchProject content
+  const fetchSpWebResults = async () => {
+    const { data } = await searchProjectClient.from('web_results').select('*').order('serial_number');
+    if (data) setSpWebResults(data);
+  };
+
+  const fetchSpLandingPages = async () => {
+    const { data } = await searchProjectClient.from('landing_page').select('*');
+    if (data) setSpLandingPages(data);
+  };
+
   useEffect(() => {
     fetchCategories();
     fetchBlogs();
@@ -173,6 +208,10 @@ const Admin = () => {
     fetchAnalytics();
     fetchDataOrbitAnalytics();
     fetchSearchProjectAnalytics();
+    fetchDzBlogs();
+    fetchDzRelatedSearches();
+    fetchSpWebResults();
+    fetchSpLandingPages();
   }, []);
 
   const fetchCategories = async () => {
@@ -512,6 +551,31 @@ const Admin = () => {
       allowed_countries: search.allowed_countries || ["WW"],
     });
     setIsSearchDialogOpen(true);
+  };
+
+  // DataOrbitZone CRUD handlers
+  const handleDeleteDzBlog = async (id: string) => {
+    if (confirm('Are you sure you want to delete this blog?')) {
+      const { error } = await dataOrbitZoneClient.from('blogs').delete().eq('id', id);
+      if (error) {
+        toast.error('Failed to delete blog');
+      } else {
+        toast.success('Blog deleted successfully');
+        fetchDzBlogs();
+      }
+    }
+  };
+
+  const handleDeleteDzSearch = async (id: string) => {
+    if (confirm('Are you sure you want to delete this related search?')) {
+      const { error } = await dataOrbitZoneClient.from('related_searches').delete().eq('id', id);
+      if (error) {
+        toast.error('Failed to delete related search');
+      } else {
+        toast.success('Related search deleted successfully');
+        fetchDzRelatedSearches();
+      }
+    }
   };
 
   const handleDeleteSearch = async (id: string) => {
@@ -1525,27 +1589,89 @@ setDataOrbitAnalytics({
 
         {/* DataOrbitZone Blogs Management */}
         {activeTab === 'dz-blogs' && (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-foreground">DataOrbitZone Blogs</h2>
-              <Button onClick={() => window.open('/admin/dataorbit', '_blank')} variant="outline">
-                Open Full Manager
+          <div className="bg-card rounded-lg border">
+            <div className="p-4 border-b flex justify-between items-center">
+              <h2 className="text-xl font-bold text-foreground">DataOrbitZone Blogs</h2>
+              <Button onClick={() => { setEditingDzBlog(null); setDzBlogDialog(true); }}>
+                <Plus className="h-4 w-4 mr-2" /> Add Blog
               </Button>
             </div>
-            <p className="text-muted-foreground">Use the full manager to create/edit DataOrbitZone blogs.</p>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="border-b">
+                  <tr>
+                    <th className="text-left p-4 font-semibold">Title</th>
+                    <th className="text-left p-4 font-semibold">Author</th>
+                    <th className="text-left p-4 font-semibold">Status</th>
+                    <th className="text-left p-4 font-semibold">Created</th>
+                    <th className="text-right p-4 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dzBlogs.map((blog) => (
+                    <tr key={blog.id} className="border-b hover:bg-muted/50">
+                      <td className="p-4 font-medium">{blog.title}</td>
+                      <td className="p-4 text-muted-foreground">{blog.author}</td>
+                      <td className="p-4">
+                        <span className={`px-2 py-1 rounded text-xs ${blog.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                          {blog.status}
+                        </span>
+                      </td>
+                      <td className="p-4 text-muted-foreground">{blog.created_at ? new Date(blog.created_at).toLocaleDateString() : 'N/A'}</td>
+                      <td className="p-4 text-right space-x-2">
+                        <Button variant="outline" size="sm" onClick={() => { setEditingDzBlog(blog); setDzBlogDialog(true); }}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteDzBlog(blog.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
         {/* DataOrbitZone Related Searches */}
         {activeTab === 'dz-searches' && (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-foreground">DataOrbitZone Related Searches</h2>
-              <Button onClick={() => window.open('/admin/dataorbit', '_blank')} variant="outline">
-                Open Full Manager
+          <div className="bg-card rounded-lg border">
+            <div className="p-4 border-b flex justify-between items-center">
+              <h2 className="text-xl font-bold text-foreground">DataOrbitZone Related Searches</h2>
+              <Button onClick={() => { setEditingDzSearch(null); setDzSearchDialog(true); }}>
+                <Plus className="h-4 w-4 mr-2" /> Add Related Search
               </Button>
             </div>
-            <p className="text-muted-foreground">Use the full manager to create/edit DataOrbitZone related searches.</p>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="border-b">
+                  <tr>
+                    <th className="text-left p-4 font-semibold">Search Text</th>
+                    <th className="text-left p-4 font-semibold">Target URL</th>
+                    <th className="text-left p-4 font-semibold">Order</th>
+                    <th className="text-right p-4 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dzRelatedSearches.map((search) => (
+                    <tr key={search.id} className="border-b hover:bg-muted/50">
+                      <td className="p-4 font-medium">{search.search_text}</td>
+                      <td className="p-4 text-muted-foreground truncate max-w-xs">{search.target_url}</td>
+                      <td className="p-4 text-muted-foreground">{search.display_order}</td>
+                      <td className="p-4 text-right space-x-2">
+                        <Button variant="outline" size="sm" onClick={() => { setEditingDzSearch(search); setDzSearchDialog(true); }}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteDzSearch(search.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -1735,27 +1861,71 @@ setDataOrbitAnalytics({
 
         {/* SearchProject Web Results Management */}
         {activeTab === 'sp-webresults' && (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-foreground">SearchProject Web Results</h2>
+          <div className="bg-card rounded-lg border">
+            <div className="p-4 border-b flex justify-between items-center">
+              <h2 className="text-xl font-bold text-foreground">SearchProject Web Results</h2>
               <Button onClick={() => window.open('/admin/dataorbit', '_blank')} variant="outline">
                 Open Full Manager
               </Button>
             </div>
-            <p className="text-muted-foreground">Use the full manager to create/edit SearchProject web results.</p>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="border-b">
+                  <tr>
+                    <th className="text-left p-4 font-semibold">Serial</th>
+                    <th className="text-left p-4 font-semibold">Title</th>
+                    <th className="text-left p-4 font-semibold">Description</th>
+                    <th className="text-left p-4 font-semibold">Sponsored</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {spWebResults.map((result) => (
+                    <tr key={result.id} className="border-b hover:bg-muted/50">
+                      <td className="p-4">{result.serial_number}</td>
+                      <td className="p-4 font-medium">{result.title}</td>
+                      <td className="p-4 text-muted-foreground truncate max-w-md">{result.description}</td>
+                      <td className="p-4">
+                        <span className={`px-2 py-1 rounded text-xs ${result.is_sponsored ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}`}>
+                          {result.is_sponsored ? 'Yes' : 'No'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
         {/* SearchProject Landing Pages */}
         {activeTab === 'sp-landing' && (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-foreground">SearchProject Landing Pages</h2>
+          <div className="bg-card rounded-lg border">
+            <div className="p-4 border-b flex justify-between items-center">
+              <h2 className="text-xl font-bold text-foreground">SearchProject Landing Pages</h2>
               <Button onClick={() => window.open('/admin/dataorbit', '_blank')} variant="outline">
                 Open Full Manager
               </Button>
             </div>
-            <p className="text-muted-foreground">Use the full manager to create/edit SearchProject landing pages.</p>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="border-b">
+                  <tr>
+                    <th className="text-left p-4 font-semibold">Title</th>
+                    <th className="text-left p-4 font-semibold">Description</th>
+                    <th className="text-left p-4 font-semibold">Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {spLandingPages.map((page) => (
+                    <tr key={page.id} className="border-b hover:bg-muted/50">
+                      <td className="p-4 font-medium">{page.title}</td>
+                      <td className="p-4 text-muted-foreground truncate max-w-md">{page.description}</td>
+                      <td className="p-4 text-muted-foreground">{new Date(page.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
