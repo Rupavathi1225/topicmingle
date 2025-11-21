@@ -97,7 +97,8 @@ export const DataOrbitZoneWebResults = () => {
     if (search.pre_landing_page_key) {
       window.location.href = `/dataorbit/prelanding?page=${search.pre_landing_page_key}`;
     } else {
-      window.location.href = `/dataorbit/search?q=${encodeURIComponent(search.search_text)}`;
+      // Redirect to the web result page specified in the search
+      window.location.href = `/dataorbit/wr?wr=${search.web_result_page}`;
     }
   };
 
