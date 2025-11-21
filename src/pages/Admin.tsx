@@ -124,7 +124,7 @@ const Admin = () => {
   const [analytics, setAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
   const [dataOrbitAnalytics, setDataOrbitAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
   const [searchProjectAnalytics, setSearchProjectAnalytics] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'blogs' | 'searches' | 'analytics' | 'dataorbit-analytics' | 'searchproject-analytics' | 'unified-analytics'>('unified-analytics');
+  const [activeTab, setActiveTab] = useState<'blogs' | 'searches' | 'analytics' | 'dataorbit-analytics' | 'searchproject-analytics' | 'unified-analytics' | 'categories'>('unified-analytics');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
   const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
@@ -1139,7 +1139,13 @@ setDataOrbitAnalytics({
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            minglemoody
+            SearchProject Analytics
+          </button>
+          <button
+            onClick={() => window.open('/admin/dataorbit', '_blank')}
+            className="px-4 py-2 font-semibold transition-colors text-muted-foreground hover:text-foreground whitespace-nowrap"
+          >
+            📝 Edit DataOrbitZone & SearchProject
           </button>
         </div>
 

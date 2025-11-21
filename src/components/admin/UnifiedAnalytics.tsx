@@ -610,12 +610,13 @@ export function UnifiedAnalytics() {
       {/* Session Details */}
       <div className="space-y-3">
         <h3 className="text-lg font-semibold text-foreground mb-4">Session Details</h3>
-        {filteredSessions.map((session) => {
+        {filteredSessions.map((session, sessionIdx) => {
           const SiteIcon = session.siteIcon;
           const isExpanded = expandedSessions.has(session.sessionId);
+          const uniqueKey = `${session.siteName}-${session.sessionId}-${sessionIdx}`;
           
           return (
-            <Collapsible key={session.sessionId} open={isExpanded} onOpenChange={() => toggleSession(session.sessionId)}>
+            <Collapsible key={uniqueKey} open={isExpanded} onOpenChange={() => toggleSession(session.sessionId)}>
               <Card className={`overflow-hidden border-border bg-gradient-to-br ${session.siteColor} text-white`}>
                 <CollapsibleTrigger className="w-full">
                   <CardContent className="p-4">
