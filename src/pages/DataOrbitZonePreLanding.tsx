@@ -48,7 +48,7 @@ export default function DataOrbitZonePreLanding() {
       .select('*')
       .eq('page_key', pageKey)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
     if (error || !data) {
       toast.error('Page not found');

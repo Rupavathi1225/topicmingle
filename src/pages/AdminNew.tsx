@@ -1,7 +1,8 @@
 import { DataOrbitZoneManager } from "@/components/admin/DataOrbitZoneManager";
 import { SearchProjectManager } from "@/components/admin/SearchProjectManager";
-import { PreLandingPageBuilder } from "@/components/admin/PreLandingPageBuilder";
+import { PreLandingEditor } from "@/components/admin/PreLandingEditor";
 import { RelatedSearchManager } from "@/components/admin/RelatedSearchManager";
+import { EmailCaptureViewer } from "@/components/admin/EmailCaptureViewer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { dataOrbitZoneClient } from "@/integrations/dataorbitzone/client";
 import { searchProjectClient } from "@/integrations/searchproject/client";
@@ -24,18 +25,22 @@ export default function AdminNew() {
               <h2 className="text-2xl font-bold mb-4">DataOrbitZone Management</h2>
               <Tabs defaultValue="content">
                 <TabsList>
-                  <TabsTrigger value="content">Content</TabsTrigger>
-                  <TabsTrigger value="prelanding">Pre-Landing Pages</TabsTrigger>
+                  <TabsTrigger value="content">Blogs</TabsTrigger>
                   <TabsTrigger value="searches">Related Searches</TabsTrigger>
+                  <TabsTrigger value="prelanding">Pre-Landing</TabsTrigger>
+                  <TabsTrigger value="emails">Emails</TabsTrigger>
                 </TabsList>
                 <TabsContent value="content">
                   <DataOrbitZoneManager />
                 </TabsContent>
-                <TabsContent value="prelanding">
-                  <PreLandingPageBuilder projectClient={dataOrbitZoneClient} />
-                </TabsContent>
                 <TabsContent value="searches">
                   <RelatedSearchManager projectClient={dataOrbitZoneClient} />
+                </TabsContent>
+                <TabsContent value="prelanding">
+                  <PreLandingEditor projectClient={dataOrbitZoneClient} projectName="DataOrbitZone" />
+                </TabsContent>
+                <TabsContent value="emails">
+                  <EmailCaptureViewer projectClient={dataOrbitZoneClient} />
                 </TabsContent>
               </Tabs>
             </div>
@@ -46,18 +51,22 @@ export default function AdminNew() {
               <h2 className="text-2xl font-bold mb-4">SearchProject Management</h2>
               <Tabs defaultValue="content">
                 <TabsList>
-                  <TabsTrigger value="content">Content</TabsTrigger>
-                  <TabsTrigger value="prelanding">Pre-Landing Pages</TabsTrigger>
+                  <TabsTrigger value="content">Web Results</TabsTrigger>
                   <TabsTrigger value="searches">Related Searches</TabsTrigger>
+                  <TabsTrigger value="prelanding">Pre-Landing</TabsTrigger>
+                  <TabsTrigger value="emails">Emails</TabsTrigger>
                 </TabsList>
                 <TabsContent value="content">
                   <SearchProjectManager />
                 </TabsContent>
-                <TabsContent value="prelanding">
-                  <PreLandingPageBuilder projectClient={searchProjectClient} />
-                </TabsContent>
                 <TabsContent value="searches">
                   <RelatedSearchManager projectClient={searchProjectClient} />
+                </TabsContent>
+                <TabsContent value="prelanding">
+                  <PreLandingEditor projectClient={searchProjectClient} projectName="SearchProject" />
+                </TabsContent>
+                <TabsContent value="emails">
+                  <EmailCaptureViewer projectClient={searchProjectClient} />
                 </TabsContent>
               </Tabs>
             </div>
@@ -66,16 +75,20 @@ export default function AdminNew() {
           <TabsContent value="topicmingle" className="space-y-8">
             <div>
               <h2 className="text-2xl font-bold mb-4">TopicMingle Management</h2>
-              <Tabs defaultValue="prelanding">
+              <Tabs defaultValue="searches">
                 <TabsList>
-                  <TabsTrigger value="prelanding">Pre-Landing Pages</TabsTrigger>
                   <TabsTrigger value="searches">Related Searches</TabsTrigger>
+                  <TabsTrigger value="prelanding">Pre-Landing</TabsTrigger>
+                  <TabsTrigger value="emails">Emails</TabsTrigger>
                 </TabsList>
-                <TabsContent value="prelanding">
-                  <PreLandingPageBuilder projectClient={supabase} />
-                </TabsContent>
                 <TabsContent value="searches">
                   <RelatedSearchManager projectClient={supabase} />
+                </TabsContent>
+                <TabsContent value="prelanding">
+                  <PreLandingEditor projectClient={supabase} projectName="TopicMingle" />
+                </TabsContent>
+                <TabsContent value="emails">
+                  <EmailCaptureViewer projectClient={supabase} />
                 </TabsContent>
               </Tabs>
             </div>
