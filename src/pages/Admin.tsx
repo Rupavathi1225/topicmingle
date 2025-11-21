@@ -27,6 +27,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { UnifiedAnalytics } from "@/components/admin/UnifiedAnalytics";
+import { PreLandingEditor } from "@/components/admin/PreLandingEditor";
+import { EmailCaptureViewer } from "@/components/admin/EmailCaptureViewer";
 
 interface Category {
   id: number;
@@ -137,7 +139,7 @@ const Admin = () => {
   const [analytics, setAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
   const [dataOrbitAnalytics, setDataOrbitAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
   const [searchProjectAnalytics, setSearchProjectAnalytics] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'blogs' | 'searches' | 'analytics' | 'categories' | 'unified-analytics' | 'dz-analytics' | 'dz-blogs' | 'dz-searches' | 'sp-analytics' | 'sp-webresults' | 'sp-landing'>('unified-analytics');
+  const [activeTab, setActiveTab] = useState<'blogs' | 'searches' | 'analytics' | 'categories' | 'unified-analytics' | 'dz-analytics' | 'dz-blogs' | 'dz-searches' | 'dz-prelanding' | 'dz-emails' | 'sp-analytics' | 'sp-webresults' | 'sp-landing' | 'sp-prelanding' | 'sp-emails' | 'tm-prelanding' | 'tm-emails'>('unified-analytics');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
   const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
@@ -1180,6 +1182,26 @@ setDataOrbitAnalytics({
               Related Searches
             </button>
             <button
+              onClick={() => setActiveTab('tm-prelanding')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'tm-prelanding'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Pre-Landing
+            </button>
+            <button
+              onClick={() => setActiveTab('tm-emails')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'tm-emails'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Emails
+            </button>
+            <button
               onClick={() => setActiveTab('analytics')}
               className={`px-4 py-2 font-semibold transition-colors ${
                 activeTab === 'analytics'
@@ -1215,6 +1237,26 @@ setDataOrbitAnalytics({
               Related Searches
             </button>
             <button
+              onClick={() => setActiveTab('dz-prelanding')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'dz-prelanding'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Pre-Landing
+            </button>
+            <button
+              onClick={() => setActiveTab('dz-emails')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'dz-emails'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Emails
+            </button>
+            <button
               onClick={() => setActiveTab('dz-analytics')}
               className={`px-4 py-2 font-semibold transition-colors ${
                 activeTab === 'dz-analytics'
@@ -1248,6 +1290,26 @@ setDataOrbitAnalytics({
               }`}
             >
               Landing Pages
+            </button>
+            <button
+              onClick={() => setActiveTab('sp-prelanding')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'sp-prelanding'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Pre-Landing
+            </button>
+            <button
+              onClick={() => setActiveTab('sp-emails')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'sp-emails'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Emails
             </button>
             <button
               onClick={() => setActiveTab('sp-analytics')}
@@ -2026,6 +2088,36 @@ setDataOrbitAnalytics({
               </div>
             </div>
           </div>
+        )}
+
+        {/* TopicMingle Pre-Landing Pages */}
+        {activeTab === 'tm-prelanding' && (
+          <PreLandingEditor projectClient={supabase} projectName="TopicMingle" />
+        )}
+
+        {/* TopicMingle Email Captures */}
+        {activeTab === 'tm-emails' && (
+          <EmailCaptureViewer projectClient={supabase} />
+        )}
+
+        {/* DataOrbitZone Pre-Landing Pages */}
+        {activeTab === 'dz-prelanding' && (
+          <PreLandingEditor projectClient={dataOrbitZoneClient} projectName="DataOrbitZone" />
+        )}
+
+        {/* DataOrbitZone Email Captures */}
+        {activeTab === 'dz-emails' && (
+          <EmailCaptureViewer projectClient={dataOrbitZoneClient} />
+        )}
+
+        {/* SearchProject Pre-Landing Pages */}
+        {activeTab === 'sp-prelanding' && (
+          <PreLandingEditor projectClient={searchProjectClient} projectName="SearchProject" />
+        )}
+
+        {/* SearchProject Email Captures */}
+        {activeTab === 'sp-emails' && (
+          <EmailCaptureViewer projectClient={searchProjectClient} />
         )}
       </div>
     </div>
