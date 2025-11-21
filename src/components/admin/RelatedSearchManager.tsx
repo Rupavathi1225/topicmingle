@@ -21,9 +21,10 @@ interface RelatedSearch {
 interface RelatedSearchManagerProps {
   projectClient: any;
   categoryId?: number;
+  projectName?: string;
 }
 
-export const RelatedSearchManager = ({ projectClient, categoryId }: RelatedSearchManagerProps) => {
+export const RelatedSearchManager = ({ projectClient, categoryId, projectName }: RelatedSearchManagerProps) => {
   const [searches, setSearches] = useState<RelatedSearch[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSearch, setEditingSearch] = useState<RelatedSearch | null>(null);
@@ -49,8 +50,14 @@ export const RelatedSearchManager = ({ projectClient, categoryId }: RelatedSearc
       query = query.eq('category_id', categoryId);
     }
     
-    const { data } = await query.order('display_order', { ascending: true });
-    if (data) setSearches(data);
+    // For TopicMingle, show latest first; for others, show by display_order
+    if (projectName === 'TopicMingle') {
+      const { data } = await query.order('created_at', { ascending: false });
+      if (data) setSearches(data);
+    } else {
+      const { data } = await query.order('display_order', { ascending: true });
+      if (data) setSearches(data);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

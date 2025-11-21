@@ -351,6 +351,48 @@ export type Database = {
         }
         Relationships: []
       }
+      web_results: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_sponsored: boolean | null
+          page_number: number
+          position: number
+          pre_landing_page_key: string | null
+          target_url: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_sponsored?: boolean | null
+          page_number?: number
+          position?: number
+          pre_landing_page_key?: string | null
+          target_url: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_sponsored?: boolean | null
+          page_number?: number
+          position?: number
+          pre_landing_page_key?: string | null
+          target_url?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

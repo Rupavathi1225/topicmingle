@@ -29,6 +29,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { UnifiedAnalytics } from "@/components/admin/UnifiedAnalytics";
 import { PreLandingEditor } from "@/components/admin/PreLandingEditor";
 import { EmailCaptureViewer } from "@/components/admin/EmailCaptureViewer";
+import { RelatedSearchManager } from "@/components/admin/RelatedSearchManager";
+import { WebResultsManager } from "@/components/admin/WebResultsManager";
 
 interface Category {
   id: number;
@@ -139,7 +141,7 @@ const Admin = () => {
   const [analytics, setAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
   const [dataOrbitAnalytics, setDataOrbitAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
   const [searchProjectAnalytics, setSearchProjectAnalytics] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'blogs' | 'searches' | 'analytics' | 'categories' | 'unified-analytics' | 'dz-analytics' | 'dz-blogs' | 'dz-searches' | 'dz-prelanding' | 'dz-emails' | 'sp-analytics' | 'sp-webresults' | 'sp-landing' | 'sp-prelanding' | 'sp-emails' | 'tm-prelanding' | 'tm-emails'>('unified-analytics');
+  const [activeTab, setActiveTab] = useState<'blogs' | 'searches' | 'analytics' | 'categories' | 'unified-analytics' | 'dz-analytics' | 'dz-blogs' | 'dz-searches' | 'dz-webresults' | 'dz-prelanding' | 'dz-emails' | 'sp-analytics' | 'sp-webresults' | 'sp-landing' | 'sp-prelanding' | 'sp-emails' | 'tm-prelanding' | 'tm-emails' | 'tm-webresults'>('unified-analytics');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
   const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
@@ -1182,6 +1184,16 @@ setDataOrbitAnalytics({
               Related Searches
             </button>
             <button
+              onClick={() => setActiveTab('tm-webresults')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'tm-webresults'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Web Results
+            </button>
+            <button
               onClick={() => setActiveTab('tm-prelanding')}
               className={`px-4 py-2 font-semibold transition-colors ${
                 activeTab === 'tm-prelanding'
@@ -1235,6 +1247,16 @@ setDataOrbitAnalytics({
               }`}
             >
               Related Searches
+            </button>
+            <button
+              onClick={() => setActiveTab('dz-webresults')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'dz-webresults'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Web Results
             </button>
             <button
               onClick={() => setActiveTab('dz-prelanding')}
@@ -1388,70 +1410,9 @@ setDataOrbitAnalytics({
         </div>
         )}
 
-        {/* Related Searches Table */}
+        {/* Related Searches - TopicMingle */}
         {activeTab === 'searches' && (
-          <div className="bg-card rounded-lg border">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="border-b">
-                  <tr>
-                    <th className="text-left p-4 font-semibold">Category</th>
-                    <th className="text-left p-4 font-semibold">Search Text</th>
-                    <th className="text-left p-4 font-semibold">Countries</th>
-                    <th className="text-left p-4 font-semibold">Order</th>
-                    <th className="text-left p-4 font-semibold">Status</th>
-                    <th className="text-left p-4 font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {relatedSearches.map((search) => {
-                    const category = categories.find(c => c.id === search.category_id);
-                    return (
-                      <tr key={search.id} className="border-b last:border-0">
-                        <td className="p-4">{category?.name}</td>
-                        <td className="p-4">{search.search_text}</td>
-                        <td className="p-4">
-                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                            {search.allowed_countries?.join(', ') || 'WW'}
-                          </span>
-                        </td>
-                        <td className="p-4">{search.display_order}</td>
-                        <td className="p-4">
-                          <span
-                            className={`px-2 py-1 rounded text-xs ${
-                              search.is_active
-                                ? "bg-green-100 text-green-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {search.is_active ? "Active" : "Inactive"}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEditSearch(search)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleDeleteSearch(search.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <RelatedSearchManager projectClient={supabase} projectName="TopicMingle" />
         )}
 
         {/* Analytics Dashboard */}
@@ -1696,45 +1657,19 @@ setDataOrbitAnalytics({
           </div>
         )}
 
+        {/* TopicMingle Web Results */}
+        {activeTab === 'tm-webresults' && (
+          <WebResultsManager projectClient={supabase} projectName="TopicMingle" />
+        )}
+
         {/* DataOrbitZone Related Searches */}
         {activeTab === 'dz-searches' && (
-          <div className="bg-card rounded-lg border">
-            <div className="p-4 border-b flex justify-between items-center">
-              <h2 className="text-xl font-bold text-foreground">DataOrbitZone Related Searches</h2>
-              <Button onClick={() => { setEditingDzSearch(null); setDzSearchDialog(true); }}>
-                <Plus className="h-4 w-4 mr-2" /> Add Related Search
-              </Button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="border-b">
-                  <tr>
-                    <th className="text-left p-4 font-semibold">Search Text</th>
-                    <th className="text-left p-4 font-semibold">Target URL</th>
-                    <th className="text-left p-4 font-semibold">Order</th>
-                    <th className="text-right p-4 font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dzRelatedSearches.map((search) => (
-                    <tr key={search.id} className="border-b hover:bg-muted/50">
-                      <td className="p-4 font-medium">{search.search_text}</td>
-                      <td className="p-4 text-muted-foreground truncate max-w-xs">{search.target_url}</td>
-                      <td className="p-4 text-muted-foreground">{search.display_order}</td>
-                      <td className="p-4 text-right space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => { setEditingDzSearch(search); setDzSearchDialog(true); }}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDeleteDzSearch(search.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <RelatedSearchManager projectClient={dataOrbitZoneClient} projectName="DataOrbitZone" />
+        )}
+
+        {/* DataOrbitZone Web Results */}
+        {activeTab === 'dz-webresults' && (
+          <WebResultsManager projectClient={dataOrbitZoneClient} projectName="DataOrbitZone" />
         )}
 
         {/* DataOrbitZone Analytics Dashboard */}
@@ -1923,40 +1858,7 @@ setDataOrbitAnalytics({
 
         {/* SearchProject Web Results Management */}
         {activeTab === 'sp-webresults' && (
-          <div className="bg-card rounded-lg border">
-            <div className="p-4 border-b flex justify-between items-center">
-              <h2 className="text-xl font-bold text-foreground">SearchProject Web Results</h2>
-              <Button onClick={() => window.open('/admin/dataorbit', '_blank')} variant="outline">
-                Open Full Manager
-              </Button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="border-b">
-                  <tr>
-                    <th className="text-left p-4 font-semibold">Serial</th>
-                    <th className="text-left p-4 font-semibold">Title</th>
-                    <th className="text-left p-4 font-semibold">Description</th>
-                    <th className="text-left p-4 font-semibold">Sponsored</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {spWebResults.map((result) => (
-                    <tr key={result.id} className="border-b hover:bg-muted/50">
-                      <td className="p-4">{result.serial_number}</td>
-                      <td className="p-4 font-medium">{result.title}</td>
-                      <td className="p-4 text-muted-foreground truncate max-w-md">{result.description}</td>
-                      <td className="p-4">
-                        <span className={`px-2 py-1 rounded text-xs ${result.is_sponsored ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}`}>
-                          {result.is_sponsored ? 'Yes' : 'No'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <WebResultsManager projectClient={searchProjectClient} projectName="SearchProject" />
         )}
 
         {/* SearchProject Landing Pages */}
@@ -2098,6 +2000,16 @@ setDataOrbitAnalytics({
         {/* TopicMingle Email Captures */}
         {activeTab === 'tm-emails' && (
           <EmailCaptureViewer projectClient={supabase} />
+        )}
+
+        {/* TopicMingle Web Results */}
+        {activeTab === 'tm-webresults' && (
+          <WebResultsManager projectClient={supabase} projectName="TopicMingle" />
+        )}
+
+        {/* DataOrbitZone Web Results */}
+        {activeTab === 'dz-webresults' && (
+          <WebResultsManager projectClient={dataOrbitZoneClient} projectName="DataOrbitZone" />
         )}
 
         {/* DataOrbitZone Pre-Landing Pages */}
