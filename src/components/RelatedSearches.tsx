@@ -70,8 +70,8 @@ const RelatedSearches = ({ categoryId }: RelatedSearchesProps) => {
       if (search.pre_landing_page_key) {
         window.location.href = `/prelanding?page=${search.pre_landing_page_key}`;
       } else {
-        // Otherwise redirect to related search page with web result page info
-        window.location.href = `/related-search?q=${encodeURIComponent(search.search_text)}&wr=${search.web_result_page}`;
+        // Redirect to the web result page specified in the search
+        window.location.href = `/wr?wr=${search.web_result_page}`;
       }
     } catch (error) {
       console.error('Error tracking related search click:', error);
@@ -79,7 +79,7 @@ const RelatedSearches = ({ categoryId }: RelatedSearchesProps) => {
       if (search.pre_landing_page_key) {
         window.location.href = `/prelanding?page=${search.pre_landing_page_key}`;
       } else {
-        window.location.href = `/related-search?q=${encodeURIComponent(search.search_text)}&wr=${search.web_result_page}`;
+        window.location.href = `/wr?wr=${search.web_result_page}`;
       }
     }
   };
