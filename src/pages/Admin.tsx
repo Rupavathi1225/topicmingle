@@ -105,6 +105,8 @@ interface Analytics {
   sessions: number;
   page_views: number;
   clicks: number;
+  unique_pages?: number;
+  unique_clicks?: number;
 }
 
 const Admin = () => {

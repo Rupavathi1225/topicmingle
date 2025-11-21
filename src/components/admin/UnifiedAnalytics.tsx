@@ -64,9 +64,9 @@ export function UnifiedAnalytics() {
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
 
   const sites = [
-    { id: 'dataorbitzone', name: 'dataorbit', icon: ShoppingCart, color: 'from-orange-500 to-orange-600' },
-    { id: 'searchproject', name: 'searchProject', icon: Home, color: 'from-pink-500 to-pink-600' },
-    { id: 'main', name: 'topicmingle', icon: Palette, color: 'from-cyan-500 to-cyan-600' },
+    { id: 'dataorbitzone', name: 'DataOrbitZone', icon: ShoppingCart, color: 'from-orange-500 to-orange-600' },
+    { id: 'searchproject', name: 'SearchProject', icon: Home, color: 'from-pink-500 to-pink-600' },
+    { id: 'main', name: 'TopicMingle', icon: Palette, color: 'from-cyan-500 to-cyan-600' },
   ];
 
   useEffect(() => {
@@ -84,17 +84,17 @@ export function UnifiedAnalytics() {
       ]);
 
       const allStats: SiteStats[] = [
-        { siteName: 'dataorbit', icon: ShoppingCart, color: 'from-orange-500 to-orange-600', ...dataOrbit.stats },
-        { siteName: 'searchProject', icon: Home, color: 'from-pink-500 to-pink-600', ...searchProj.stats },
-        { siteName: 'topicmingle', icon: Palette, color: 'from-cyan-500 to-cyan-600', ...mainProj.stats },
+        { siteName: 'DataOrbitZone', icon: ShoppingCart, color: 'from-orange-500 to-orange-600', ...dataOrbit.stats },
+        { siteName: 'SearchProject', icon: Home, color: 'from-pink-500 to-pink-600', ...searchProj.stats },
+        { siteName: 'TopicMingle', icon: Palette, color: 'from-cyan-500 to-cyan-600', ...mainProj.stats },
       ];
 
       setSiteStats(allStats);
 
       const allSessions = [
-        ...dataOrbit.sessions.map((s: any) => ({ ...s, siteName: 'dataorbit', siteIcon: ShoppingCart, siteColor: 'from-orange-500 to-orange-600' })),
-        ...searchProj.sessions.map((s: any) => ({ ...s, siteName: 'searchProject', siteIcon: Home, siteColor: 'from-pink-500 to-pink-600' })),
-        ...mainProj.sessions.map((s: any) => ({ ...s, siteName: 'topicmingle', siteIcon: Palette, siteColor: 'from-cyan-500 to-cyan-600' })),
+        ...dataOrbit.sessions,
+        ...searchProj.sessions,
+        ...mainProj.sessions,
       ];
 
       // keep newest first
@@ -275,6 +275,9 @@ export function UnifiedAnalytics() {
 
       return {
         sessionId: s.sessionId,
+        siteName: 'DataOrbitZone',
+        siteIcon: ShoppingCart,
+        siteColor: 'from-orange-500 to-orange-600',
         device: s.device,
         ipAddress: s.ipAddress,
         country: s.country,
@@ -313,6 +316,9 @@ export function UnifiedAnalytics() {
 
     const sessions: SessionDetail[] = (analytics || []).map((a: any) => ({
       sessionId: a.session_id || `sp-${a.id || Math.random().toString(36).slice(2, 9)}`,
+      siteName: 'SearchProject',
+      siteIcon: Home,
+      siteColor: 'from-pink-500 to-pink-600',
       device: a.device || 'Mobile • Safari',
       ipAddress: a.ip_address || 'N/A',
       country: a.country || 'Unknown',
@@ -322,23 +328,22 @@ export function UnifiedAnalytics() {
       uniquePages: a.unique_pages || (a.page_urls ? new Set(a.page_urls).size : (a.unique_pages_count || 0)),
       totalClicks: a.clicks || 0,
       uniqueClicks: a.unique_clicks || (a.button_ids ? new Set(a.button_ids).size : (a.unique_clicks_count || 0)),
-      // Added visitNow fields and mapped existing data
       searchResults: Array.isArray(a.search_results) ? a.search_results.map((sr: any) => ({
         term: sr.term,
         views: sr.views || 0,
         totalClicks: sr.totalClicks || 0,
         uniqueClicks: sr.uniqueClicks || 0,
-        visitNowClicks: 0, // Not tracked by this site
-        visitNowUnique: 0,  // Not tracked by this site
+        visitNowClicks: 0,
+        visitNowUnique: 0,
       })) : [{
         term: 'results',
         views: a.related_searches || 0,
         totalClicks: a.result_clicks || 0,
         uniqueClicks: a.unique_clicks || 0,
-        visitNowClicks: 0, // Not tracked by this site
-        visitNowUnique: 0,  // Not tracked by this site
+        visitNowClicks: 0,
+        visitNowUnique: 0,
       }],
-      blogClicks: [], // Not tracked by this site
+      blogClicks: [],
       buttonInteractions: Array.isArray(a.button_interactions) ? a.button_interactions.map((bi: any) => ({
         button: bi.button,
         total: bi.total || 0,
@@ -462,12 +467,22 @@ export function UnifiedAnalytics() {
 
     // Convert maps to final arrays for the session object
     const sessions = Array.from(sessionMap.values()).map((s: any) => ({
-      ...s,
+      sessionId: s.sessionId,
+      siteName: 'TopicMingle',
+      siteIcon: Palette,
+      siteColor: 'from-cyan-500 to-cyan-600',
+      device: s.device,
+      ipAddress: s.ipAddress,
+      country: s.country,
+      timeSpent: s.timeSpent,
+      timestamp: s.timestamp,
+      pageViews: s.pageViews,
       uniquePages: s.uniquePagesSet.size,
+      totalClicks: s.totalClicks,
       uniqueClicks: s.uniqueClicksSet.size,
       searchResults: Array.from(s.rsBreakdownMap.values()).map((r: any) => ({
         term: r.term,
-        views: 0, // This DB structure doesn't track related search *views*
+        views: 0,
         totalClicks: r.clicks,
         uniqueClicks: r.ips.size,
         visitNowClicks: r.visitNowClicks,
