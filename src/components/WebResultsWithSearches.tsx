@@ -59,7 +59,8 @@ export const WebResultsWithSearches = ({ projectClient, currentPage }: WebResult
     if (search.pre_landing_page_key) {
       window.location.href = `/prelanding?page=${search.pre_landing_page_key}`;
     } else {
-      window.location.href = `/related-search?q=${encodeURIComponent(search.search_text)}`;
+      // Redirect to the web result page specified in the search
+      window.location.href = `/wr?wr=${search.web_result_page}`;
     }
   };
 
