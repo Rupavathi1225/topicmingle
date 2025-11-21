@@ -529,269 +529,238 @@ export function UnifiedAnalytics() {
 
   const filteredStats = selectedSite === 'all'
     ? siteStats
-    : siteStats.filter(s => s.siteName.toLowerCase() === (sites.find(site => site.id === selectedSite)?.name.toLowerCase()));
+    : siteStats.filter(stat => {
+        const site = sites.find(s => s.name === stat.siteName);
+        return site && site.id === selectedSite;
+      });
 
   const filteredSessions = selectedSite === 'all'
     ? sessions
-    : sessions.filter(s => s.siteName.toLowerCase() === (sites.find(site => site.id === selectedSite)?.name.toLowerCase()));
+    : sessions.filter(s => {
+        const site = sites.find(site => site.name === s.siteName);
+        return site && site.id === selectedSite;
+      });
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-64">
+      <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+    </div>;
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Multi-Site Analytics Hub</h1>
-          <p className="text-purple-200">Track page views, clicks & button interactions across platforms</p>
-        </div>
-
-        {/* Controls */}
-        <div className="flex gap-4 mb-6">
-          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-            <SelectTrigger className="w-40 bg-purple-800/50 border-purple-600 text-white">
-              <SelectValue />
+    <div className="space-y-6 p-6">
+      {/* Header Controls */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-foreground">Multi-Site Analytics Hub</h2>
+        <div className="flex gap-3">
+          <Select value={selectedSite} onValueChange={setSelectedSite}>
+            <SelectTrigger className="w-[200px] bg-background border-border">
+              <SelectValue placeholder="Select site" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="today">Today</SelectItem>
-              <SelectItem value="week">This Week</SelectItem>
-              <SelectItem value="month">This Month</SelectItem>
+              <SelectItem value="all">All Sites</SelectItem>
+              {sites.map(site => (
+                <SelectItem key={site.id} value={site.id}>{site.name}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
-
-          <Button variant="outline" className="bg-purple-800/50 border-purple-600 text-white hover:bg-purple-700">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-
-          <Button onClick={fetchAnalytics} className="bg-purple-600 hover:bg-purple-500">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
+          <Button onClick={fetchAnalytics} variant="outline" size="icon">
+            <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
+      </div>
 
-        {/* Site Filter Tabs */}
-        <div className="flex gap-2 mb-6">
-          <Button
-            variant={selectedSite === 'all' ? 'default' : 'outline'}
-            onClick={() => setSelectedSite('all')}
-            className={selectedSite === 'all' ? 'bg-white text-purple-900' : 'bg-purple-800/50 border-purple-600 text-white'}
-          >
-            All Sites
-          </Button>
-          {sites.map(site => (
-            <Button
-              key={site.id}
-              variant={selectedSite === site.id ? 'default' : 'outline'}
-              onClick={() => setSelectedSite(site.id)}
-              className={selectedSite === site.id ? 'bg-white text-purple-900' : 'bg-purple-800/50 border-purple-600 text-white'}
-            >
-              <site.icon className="h-4 w-4 mr-2" />
-              {site.name}
-            </Button>
-          ))}
-        </div>
-
-        {/* Site Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {filteredStats.map((stat, idx) => (
-            <Card key={idx} className="bg-gradient-to-br from-white to-gray-50 border-0 shadow-lg">
+      {/* Stats Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {filteredStats.map((stat, idx) => {
+          const SiteIcon = stat.icon;
+          return (
+            <Card key={idx} className="overflow-hidden border-border bg-card">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center`}>
-                    <stat.icon className="h-6 w-6 text-white" />
+                  <div className={`p-2 rounded-lg bg-gradient-to-br ${stat.color}`}>
+                    <SiteIcon className="h-5 w-5 text-white" />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-gray-900">{stat.siteName}</h3>
-                    <p className="text-sm text-gray-500">{stat.sessions} sessions</p>
-                  </div>
+                  <h3 className="font-semibold text-foreground">{stat.siteName}</h3>
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">Page Views</p>
-                    <p className="text-2xl font-bold text-gray-900">{stat.pageViews}</p>
+                    <p className="text-sm text-muted-foreground">Sessions</p>
+                    <p className="text-2xl font-bold text-foreground">{stat.sessions}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">Unique Pages</p>
-                    <p className="text-2xl font-bold text-gray-900">{stat.uniquePages}</p>
+                    <p className="text-sm text-muted-foreground">Page Views</p>
+                    <p className="text-2xl font-bold text-foreground">{stat.pageViews}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">Total Clicks</p>
-                    <p className="text-2xl font-bold text-blue-600">{stat.totalClicks}</p>
+                    <p className="text-sm text-muted-foreground">Unique Pages</p>
+                    <p className="text-2xl font-bold text-foreground">{stat.uniquePages}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">Unique Clicks</p>
-                    <p className="text-2xl font-bold text-purple-600">{stat.uniqueClicks}</p>
+                    <p className="text-sm text-muted-foreground">Total Clicks</p>
+                    <p className="text-2xl font-bold text-foreground">{stat.totalClicks}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          );
+        })}
+      </div>
 
-        {/* Session Details */}
-        <div className="space-y-4">
-          {filteredSessions.map((session, idx) => (
-            <Collapsible key={idx} open={expandedSessions.has(session.sessionId)} onOpenChange={() => toggleSession(session.sessionId)}>
-              <Card className={`bg-gradient-to-r ${session.siteColor} border-0 shadow-lg overflow-hidden`}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
-                        <session.siteIcon className="h-5 w-5 text-white" />
+      {/* Session Details */}
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold text-foreground mb-4">Session Details</h3>
+        {filteredSessions.map((session) => {
+          const SiteIcon = session.siteIcon;
+          const isExpanded = expandedSessions.has(session.sessionId);
+          
+          return (
+            <Collapsible key={session.sessionId} open={isExpanded} onOpenChange={() => toggleSession(session.sessionId)}>
+              <Card className={`overflow-hidden border-border bg-gradient-to-br ${session.siteColor} text-white`}>
+                <CollapsibleTrigger className="w-full">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      {/* Left: Site Icon & Info */}
+                      <div className="flex items-center gap-4 min-w-[200px]">
+                        <div className="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
+                          <SiteIcon className="h-5 w-5" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-semibold text-sm">{session.siteName}</p>
+                          <p className="text-xs opacity-90">{session.device}</p>
+                          <p className="text-xs opacity-80">{session.ipAddress} • {session.country}</p>
+                        </div>
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-white font-semibold">{session.sessionId.substring(0, 8)}...</span>
-                          <span className="px-2 py-1 rounded-full bg-white/20 text-white text-xs">{session.siteName}</span>
-                          <span className="px-2 py-1 rounded-full bg-white/20 text-white text-xs">{session.country}</span>
+
+                      {/* Middle: Stats Columns */}
+                      <div className="flex gap-8 items-center">
+                        {/* Page Views */}
+                        <div className="text-center min-w-[100px]">
+                          <p className="text-xs opacity-80 mb-1">Page Views</p>
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="text-center">
+                              <p className="text-lg font-bold">{session.pageViews}</p>
+                              <p className="text-xs opacity-70">Total</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-lg font-bold">{session.uniquePages}</p>
+                              <p className="text-xs opacity-70">Unique</p>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-white/80 text-sm mt-1">
-                          {session.device} • {session.ipAddress} • {session.timeSpent} • {new Date(session.timestamp).toLocaleString()}
-                        </p>
+
+                        {/* Searches */}
+                        <div className="text-center min-w-[100px]">
+                          <p className="text-xs opacity-80 mb-1">Searches</p>
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="text-center">
+                              <p className="text-lg font-bold">{session.searchResults.reduce((sum, sr) => sum + sr.totalClicks, 0)}</p>
+                              <p className="text-xs opacity-70">Total</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-lg font-bold">{session.searchResults.reduce((sum, sr) => sum + sr.uniqueClicks, 0)}</p>
+                              <p className="text-xs opacity-70">Unique</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Interactions */}
+                        <div className="text-center min-w-[100px]">
+                          <p className="text-xs opacity-80 mb-1">Interactions</p>
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="text-center">
+                              <p className="text-lg font-bold">{session.totalClicks}</p>
+                              <p className="text-xs opacity-70">Total</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-lg font-bold">{session.uniqueClicks}</p>
+                              <p className="text-xs opacity-70">Unique</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right: Expand Icon */}
+                      <div className="ml-4">
+                        {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                       </div>
                     </div>
+                  </CardContent>
+                </CollapsibleTrigger>
 
-                    <CollapsibleTrigger asChild>
-                      <Button className="bg-white/20 hover:bg-white/30 text-white border-0">
-                        {expandedSessions.has(session.sessionId) ? 'Hide' : 'Details'}
-                        {expandedSessions.has(session.sessionId) ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
-                      </Button>
-                    </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="bg-white/10 backdrop-blur-sm border-t border-white/20 p-4 space-y-4">
+                    {/* Related Search Clicks */}
+                    {session.searchResults.length > 0 && (
+                      <div className="bg-white/10 rounded-lg p-3">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Search className="h-4 w-4" />
+                          <h4 className="font-semibold text-sm">Related Search Clicks</h4>
+                        </div>
+                        <div className="space-y-2">
+                          {session.searchResults.map((sr, idx) => (
+                            <div key={idx} className="flex items-center justify-between text-sm bg-white/5 rounded px-3 py-2">
+                              <span className="font-medium flex-1">{sr.term}</span>
+                              <div className="flex gap-6 text-xs">
+                                <span>Total: <strong>{sr.totalClicks}</strong></span>
+                                <span>Unique: <strong>{sr.uniqueClicks}</strong></span>
+                                {sr.visitNowClicks > 0 && (
+                                  <span className="text-green-300">Visit Now: <strong>{sr.visitNowClicks}</strong></span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Blog Clicks */}
+                    {session.blogClicks.length > 0 && (
+                      <div className="bg-white/10 rounded-lg p-3">
+                        <div className="flex items-center gap-2 mb-3">
+                          <FileText className="h-4 w-4" />
+                          <h4 className="font-semibold text-sm">Blog Clicks</h4>
+                        </div>
+                        <div className="space-y-2">
+                          {session.blogClicks.map((bc, idx) => (
+                            <div key={idx} className="flex items-center justify-between text-sm bg-white/5 rounded px-3 py-2">
+                              <span className="font-medium flex-1">{bc.title}</span>
+                              <div className="flex gap-6 text-xs">
+                                <span>Total: <strong>{bc.totalClicks}</strong></span>
+                                <span>Unique: <strong>{bc.uniqueClicks}</strong></span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Button Interactions */}
+                    {session.buttonInteractions.length > 0 && (
+                      <div className="bg-white/10 rounded-lg p-3">
+                        <div className="flex items-center gap-2 mb-3">
+                          <MousePointerClick className="h-4 w-4" />
+                          <h4 className="font-semibold text-sm">Button Interactions</h4>
+                        </div>
+                        <div className="space-y-2">
+                          {session.buttonInteractions.map((bi, idx) => (
+                            <div key={idx} className="flex items-center justify-between text-sm bg-white/5 rounded px-3 py-2">
+                              <span className="font-medium flex-1">{bi.button}</span>
+                              <div className="flex gap-6 text-xs">
+                                <span>Total: <strong>{bi.total}</strong></span>
+                                <span>Unique: <strong>{bi.unique}</strong></span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-4 gap-4">
-                    <div className="text-center">
-                      <p className="text-white/60 text-sm mb-1">Page Views</p>
-                      <p className="text-2xl font-bold text-white">{session.pageViews}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-white/60 text-sm mb-1">Unique Pages</p>
-                      <p className="text-2xl font-bold text-white">{session.uniquePages}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-white/60 text-sm mb-1">Total Clicks</p>
-                      <p className="text-2xl font-bold text-white">{session.totalClicks}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-white/60 text-sm mb-1">Unique Clicks</p>
-                      <p className="text-2xl font-bold text-white">{session.uniqueClicks}</p>
-                    </div>
-                  </div>
-
-                  {/* This is the new detailed breakdown section.
-                    It now renders the new data structures.
-                  */}
-                  <CollapsibleContent className="mt-6">
-                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 space-y-4">
-
-                      {/* Related Searches Breakdown */}
-                      {session.searchResults && session.searchResults.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <Search className="h-5 w-5 text-white/80" />
-                            <h5 className="text-white font-semibold text-lg">Related Search Clicks</h5>
-                          </div>
-                          <div className="space-y-2">
-                            {session.searchResults.map((sr, srIdx) => (
-                              <div key={srIdx} className="bg-white/10 rounded-lg p-3">
-                                <div className="flex justify-between items-center text-sm gap-2">
-                                  <span className="font-medium text-white flex-1 truncate" title={sr.term}>{sr.term}</span>
-                                  <div className="flex gap-2 flex-shrink-0">
-                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs font-semibold">
-                                      Total: {sr.totalClicks}
-                                    </span>
-                                    <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-semibold">
-                                      Unique: {sr.uniqueClicks}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex justify-between items-center text-xs gap-2 pl-4 mt-2 border-l-2 border-green-300">
-                                  <span className="text-white/80">"Visit Now" Button:</span>
-                                  <div className="flex gap-2">
-                                    {sr.visitNowClicks > 0 ? (
-                                      <>
-                                        <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded font-semibold">
-                                          Total: {sr.visitNowClicks}
-                                        </span>
-                                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-semibold">
-                                          Unique: {sr.visitNowUnique}
-                                        </span>
-                                      </>
-                                    ) : (
-                                      <span className="px-2 py-0.5 bg-gray-600/50 text-white/60 rounded font-semibold">
-                                        Not Clicked
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Blog Clicks Breakdown */}
-                      {session.blogClicks && session.blogClicks.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <FileText className="h-5 w-5 text-white/80" />
-                            <h5 className="text-white font-semibold text-lg">Blog Clicks</h5>
-                          </div>
-                          <div className="space-y-2">
-                            {session.blogClicks.map((bc, bcIdx) => (
-                              <div key={bcIdx} className="bg-white/10 rounded-lg p-3">
-                                <div className="flex justify-between items-center text-sm gap-2">
-                                  <span className="font-medium text-white flex-1 truncate" title={bc.title}>{bc.title}</span>
-                                  <div className="flex gap-2 flex-shrink-0">
-                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs font-semibold">
-                                      Total: {bc.totalClicks}
-                                    </span>
-                                    <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-semibold">
-                                      Unique: {bc.uniqueClicks}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Other Button Interactions */}
-                      {session.buttonInteractions && session.buttonInteractions.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <MousePointerClick className="h-5 w-5 text-white/80" />
-                            <h5 className="text-white font-semibold text-lg">Other Button Interactions</h5>
-                          </div>
-                          <div className="space-y-2">
-                            {session.buttonInteractions.map((bi, biIdx) => (
-                              <div key={biIdx} className="bg-white/10 rounded-lg p-3">
-                                <div className="flex justify-between items-center text-sm gap-2">
-                                  <span className="font-medium text-white flex-1 truncate" title={bi.button}>{bi.button}</span>
-                                  <div className="flex gap-2 flex-shrink-0">
-                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs font-semibold">
-                                      Total: {bi.total}
-                                    </span>
-                                    <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-semibold">
-                                      Unique: {bi.unique}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                    </div>
-                  </CollapsibleContent>
-                </CardContent>
+                </CollapsibleContent>
               </Card>
             </Collapsible>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </div>
   );
