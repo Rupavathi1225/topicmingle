@@ -262,7 +262,7 @@ export type Database = {
       related_searches: {
         Row: {
           allowed_countries: string[] | null
-          category_id: number
+          category_id: number | null
           created_at: string
           display_order: number
           id: string
@@ -278,7 +278,7 @@ export type Database = {
         }
         Insert: {
           allowed_countries?: string[] | null
-          category_id: number
+          category_id?: number | null
           created_at?: string
           display_order?: number
           id?: string
@@ -294,7 +294,7 @@ export type Database = {
         }
         Update: {
           allowed_countries?: string[] | null
-          category_id?: number
+          category_id?: number | null
           created_at?: string
           display_order?: number
           id?: string

@@ -65,7 +65,7 @@ export const RelatedSearchManager = ({ projectClient, categoryId, projectName }:
     
     const payload = {
       ...formData,
-      category_id: categoryId,
+      ...(categoryId && { category_id: categoryId }),
     };
 
     if (editingSearch) {
@@ -240,14 +240,17 @@ export const RelatedSearchManager = ({ projectClient, categoryId, projectName }:
               </p>
             </div>
 
-            <div>
-              <Label>Display Order</Label>
-              <Input
-                type="number"
-                value={formData.display_order}
-                onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) })}
-              />
-            </div>
+              <div>
+                <Label>Display Order</Label>
+                <Input
+                  type="number"
+                  value={formData.display_order}
+                  onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Lower numbers appear first
+                </p>
+              </div>
 
             <div className="flex justify-end space-x-2">
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>

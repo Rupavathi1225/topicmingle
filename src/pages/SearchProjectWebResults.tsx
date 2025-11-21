@@ -97,7 +97,8 @@ export const SearchProjectWebResults = () => {
     if (search.pre_landing_page_key) {
       window.location.href = `/searchproject/prelanding?page=${search.pre_landing_page_key}`;
     } else {
-      window.location.href = `/searchproject/search?q=${encodeURIComponent(search.search_text)}`;
+      // Redirect to the web result page specified in the search
+      window.location.href = `/searchproject/wr?wr=${search.web_result_page}`;
     }
   };
 
