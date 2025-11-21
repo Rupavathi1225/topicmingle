@@ -9,6 +9,7 @@ interface WebResult {
   id: string;
   title: string;
   description?: string;
+  logo_url?: string;
   target_url: string;
   page_number: number;
   position: number;
@@ -90,7 +91,7 @@ export const WebResults = () => {
     if (result.pre_landing_page_key) {
       window.location.href = `/prelanding?page=${result.pre_landing_page_key}`;
     } else {
-      window.open(result.target_url, '_blank');
+      window.location.href = result.target_url;
     }
   };
 
@@ -114,40 +115,43 @@ export const WebResults = () => {
           <div className="mb-8">
             <h2 className="text-2xl font-bold mb-4">Sponsored Results</h2>
             <div className="space-y-4">
-              {sponsoredResults.map((result) => (
-                <div
-                  key={result.id}
-                  className="bg-card border border-accent/20 rounded-lg p-6 hover:border-accent/40 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded">
-                          Ad · Sponsored
-                        </span>
-                      </div>
-                      <h3 className="text-xl font-semibold mb-2 text-foreground">
-                        {result.title}
-                      </h3>
-                      {result.description && (
-                        <p className="text-muted-foreground mb-4">
-                          {result.description}
-                        </p>
-                      )}
-                      <p className="text-sm text-accent break-all mb-4">
-                        {result.target_url}
-                      </p>
-                      <Button
-                        onClick={() => handleResultClick(result)}
-                        className="bg-accent hover:bg-accent/90 text-accent-foreground"
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Visit Website
-                      </Button>
+            {sponsoredResults.map((result) => (
+              <div
+                key={result.id}
+                onClick={() => handleResultClick(result)}
+                className="bg-card border border-accent/20 rounded-lg p-6 hover:border-accent/40 transition-colors cursor-pointer"
+              >
+                <div className="flex items-start gap-4">
+                  {result.logo_url && (
+                    <div className="flex-shrink-0">
+                      <img 
+                        src={result.logo_url} 
+                        alt={result.title}
+                        className="w-12 h-12 rounded-lg object-cover"
+                      />
                     </div>
+                  )}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded">
+                        Ad · Sponsored
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2 text-foreground hover:text-accent transition-colors">
+                      {result.title}
+                    </h3>
+                    {result.description && (
+                      <p className="text-muted-foreground mb-2">
+                        {result.description}
+                      </p>
+                    )}
+                    <p className="text-sm text-accent break-all">
+                      {new URL(result.target_url).hostname}
+                    </p>
                   </div>
                 </div>
-              ))}
+              </div>
+            ))}
             </div>
           </div>
         )}
@@ -159,31 +163,39 @@ export const WebResults = () => {
             {webResults.map((result) => (
               <div
                 key={result.id}
-                className="bg-card border rounded-lg p-6 hover:border-accent/40 transition-colors"
+                onClick={() => handleResultClick(result)}
+                className="bg-card border rounded-lg p-6 hover:border-accent/40 transition-colors cursor-pointer"
               >
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-accent font-bold">
-                      {result.title.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
+                <div className="flex items-start gap-4">
+                  {result.logo_url ? (
+                    <div className="flex-shrink-0">
+                      <img 
+                        src={result.logo_url} 
+                        alt={result.title}
+                        className="w-12 h-12 rounded-lg object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-accent/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-accent font-bold text-lg">
+                        {result.title.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex-1">
-                    <h3 className="text-xl font-semibold mb-1 text-foreground">
+                    <h3 className="text-xl font-semibold mb-1 text-foreground hover:text-accent transition-colors">
                       {result.title}
                     </h3>
                     <p className="text-sm text-muted-foreground mb-2">
                       {new URL(result.target_url).hostname}
                     </p>
+                    {result.description && (
+                      <p className="text-muted-foreground">
+                        {result.description}
+                      </p>
+                    )}
                   </div>
                 </div>
-                {result.description && (
-                  <p className="text-muted-foreground mb-4 ml-13">
-                    {result.description}
-                  </p>
-                )}
-                <p className="text-sm text-accent break-all mb-4 ml-13">
-                  {result.target_url}
-                </p>
               </div>
             ))}
           </div>
