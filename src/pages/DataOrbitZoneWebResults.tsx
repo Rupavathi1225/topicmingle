@@ -1,0 +1,208 @@
+import { useEffect, useState } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
+import { dataOrbitZoneClient } from '@/integrations/dataorbitzone/client';
+import { ChevronRight, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+interface WebResult {
+  id: string;
+  title: string;
+  description?: string;
+  target_url: string;
+  page_number: number;
+  position: number;
+  is_active: boolean;
+  is_sponsored?: boolean;
+  pre_landing_page_key?: string;
+}
+
+interface RelatedSearch {
+  id: string;
+  title: string;
+  search_text: string;
+  web_result_page: number;
+  position: number;
+  pre_landing_page_key: string | null;
+}
+
+export const DataOrbitZoneWebResults = () => {
+  const [searchParams] = useSearchParams();
+  const pageNumber = parseInt(searchParams.get('wr') || '1');
+  const [webResults, setWebResults] = useState<WebResult[]>([]);
+  const [sponsoredResults, setSponsoredResults] = useState<WebResult[]>([]);
+  const [relatedSearches, setRelatedSearches] = useState<RelatedSearch[]>([]);
+  const [userCountry, setUserCountry] = useState<string>('WW');
+
+  useEffect(() => {
+    const getUserCountry = async () => {
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        const data = await response.json();
+        setUserCountry(data.country_code || 'WW');
+      } catch {
+        setUserCountry('WW');
+      }
+    };
+    getUserCountry();
+  }, []);
+
+  useEffect(() => {
+    fetchWebResults();
+    fetchRelatedSearches();
+  }, [pageNumber, userCountry]);
+
+  const fetchWebResults = async () => {
+    const { data } = await dataOrbitZoneClient
+      .from('web_results')
+      .select('*')
+      .eq('page_number', pageNumber)
+      .eq('is_active', true)
+      .order('position', { ascending: true });
+    
+    if (data) {
+      const sponsored = data.filter(r => r.is_sponsored);
+      const organic = data.filter(r => !r.is_sponsored);
+      setSponsoredResults(sponsored);
+      setWebResults(organic);
+    }
+  };
+
+  const fetchRelatedSearches = async () => {
+    const { data } = await dataOrbitZoneClient
+      .from('related_searches')
+      .select('*')
+      .eq('web_result_page', pageNumber)
+      .eq('is_active', true)
+      .order('position', { ascending: true });
+    
+    if (data) {
+      const filteredSearches = data.filter((search: any) => 
+        search.allowed_countries?.includes('WW') || 
+        search.allowed_countries?.includes(userCountry)
+      ).slice(0, 4);
+      setRelatedSearches(filteredSearches);
+    }
+  };
+
+  const handleResultClick = (result: WebResult) => {
+    if (result.pre_landing_page_key) {
+      window.location.href = `/dataorbit/prelanding?page=${result.pre_landing_page_key}`;
+    } else {
+      window.open(result.target_url, '_blank');
+    }
+  };
+
+  const handleSearchClick = (search: RelatedSearch) => {
+    if (search.pre_landing_page_key) {
+      window.location.href = `/dataorbit/prelanding?page=${search.pre_landing_page_key}`;
+    } else {
+      window.location.href = `/dataorbit/search?q=${encodeURIComponent(search.search_text)}`;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
+        <Link to="/dataorbit" className="inline-flex items-center text-accent hover:underline mb-6">
+          ← Back to DataOrbitZone
+        </Link>
+
+        {sponsoredResults.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold mb-4">Sponsored Results</h2>
+            <div className="space-y-4">
+              {sponsoredResults.map((result) => (
+                <div
+                  key={result.id}
+                  className="bg-card border border-accent/20 rounded-lg p-6 hover:border-accent/40 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded">
+                          Ad · Sponsored
+                        </span>
+                      </div>
+                      <h3 className="text-xl font-semibold mb-2 text-foreground">
+                        {result.title}
+                      </h3>
+                      {result.description && (
+                        <p className="text-muted-foreground mb-4">
+                          {result.description}
+                        </p>
+                      )}
+                      <p className="text-sm text-accent break-all mb-4">
+                        {result.target_url}
+                      </p>
+                      <Button
+                        onClick={() => handleResultClick(result)}
+                        className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Visit Website
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold mb-4">Web Results</h2>
+          <div className="space-y-6">
+            {webResults.map((result) => (
+              <div
+                key={result.id}
+                className="bg-card border rounded-lg p-6 hover:border-accent/40 transition-colors"
+              >
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-accent font-bold">
+                      {result.title.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold mb-1 text-foreground">
+                      {result.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {new URL(result.target_url).hostname}
+                    </p>
+                  </div>
+                </div>
+                {result.description && (
+                  <p className="text-muted-foreground mb-4 ml-13">
+                    {result.description}
+                  </p>
+                )}
+                <p className="text-sm text-accent break-all mb-4 ml-13">
+                  {result.target_url}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {relatedSearches.length > 0 && (
+          <div className="mt-12">
+            <h3 className="text-lg font-semibold mb-4">Related Searches</h3>
+            <div className="grid gap-3">
+              {relatedSearches.map((search) => (
+                <button
+                  key={search.id}
+                  onClick={() => handleSearchClick(search)}
+                  className="flex items-center justify-between p-4 bg-card hover:bg-accent/10 text-foreground rounded-lg transition-colors duration-200 group border"
+                >
+                  <span className="text-left font-medium">{search.title || search.search_text}</span>
+                  <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
