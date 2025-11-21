@@ -11,6 +11,11 @@ import AdminNew from "./pages/AdminNew";
 import RelatedSearchPage from "./pages/RelatedSearchPage";
 import NotFound from "./pages/NotFound";
 import PreLandingPage from "./pages/PreLandingPage";
+import { WebResults } from "./pages/WebResults";
+import { DataOrbitZoneWebResults } from "./pages/DataOrbitZoneWebResults";
+import { SearchProjectWebResults } from "./pages/SearchProjectWebResults";
+import DataOrbitZonePreLanding from "./pages/DataOrbitZonePreLanding";
+import SearchProjectPreLanding from "./pages/SearchProjectPreLanding";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +33,18 @@ const App = () => (
           <Route path="/admin/dataorbit" element={<AdminNew />} />
           <Route path="/related-search" element={<RelatedSearchPage />} />
           <Route path="/prelanding" element={<PreLandingPage />} />
+          
+          {/* TopicMingle Web Results */}
+          <Route path="/wr" element={<WebResults />} />
+          
+          {/* DataOrbitZone Routes */}
+          <Route path="/dataorbit/wr" element={<DataOrbitZoneWebResults />} />
+          <Route path="/dataorbit/prelanding" element={<DataOrbitZonePreLanding />} />
+          
+          {/* SearchProject Routes */}
+          <Route path="/searchproject/wr" element={<SearchProjectWebResults />} />
+          <Route path="/searchproject/prelanding" element={<SearchProjectPreLanding />} />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
