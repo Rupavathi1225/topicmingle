@@ -5,9 +5,13 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface RelatedSearch {
   id: string;
+  title: string;
   search_text: string;
   display_order: number;
   allowed_countries: string[];
+  web_result_page: number;
+  position: number;
+  pre_landing_page_key: string | null;
 }
 
 interface RelatedSearchesProps {
@@ -57,16 +61,26 @@ const RelatedSearches = ({ categoryId }: RelatedSearchesProps) => {
     }
   }, [categoryId, userCountry]);
 
-  const handleSearchClick = async (search: string) => {
+  const handleSearchClick = async (search: RelatedSearch) => {
     try {
-      // Track the click with all details before opening new page
-      await trackClick(`related-search-${search}`, search);
-      // Redirect to our related search page
-      window.location.href = `/related-search?q=${encodeURIComponent(search)}`;
+      // Track the click
+      await trackClick(`related-search-${search.search_text}`, search.title || search.search_text);
+      
+      // If there's a pre-landing page, redirect there
+      if (search.pre_landing_page_key) {
+        window.location.href = `/prelanding?page=${search.pre_landing_page_key}`;
+      } else {
+        // Otherwise redirect to related search page with web result page info
+        window.location.href = `/related-search?q=${encodeURIComponent(search.search_text)}&wr=${search.web_result_page}`;
+      }
     } catch (error) {
       console.error('Error tracking related search click:', error);
       // Still redirect even if tracking fails
-      window.location.href = `/related-search?q=${encodeURIComponent(search)}`;
+      if (search.pre_landing_page_key) {
+        window.location.href = `/prelanding?page=${search.pre_landing_page_key}`;
+      } else {
+        window.location.href = `/related-search?q=${encodeURIComponent(search.search_text)}&wr=${search.web_result_page}`;
+      }
     }
   };
 
@@ -79,10 +93,10 @@ const RelatedSearches = ({ categoryId }: RelatedSearchesProps) => {
         {searches.map((search) => (
           <button
             key={search.id}
-            onClick={() => handleSearchClick(search.search_text)}
+            onClick={() => handleSearchClick(search)}
             className="flex items-center justify-between p-4 bg-[#1a2332] hover:bg-[#243042] text-white rounded-lg transition-colors duration-200 group"
           >
-            <span className="text-left font-medium">{search.search_text}</span>
+            <span className="text-left font-medium">{search.title || search.search_text}</span>
             <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
           </button>
         ))}

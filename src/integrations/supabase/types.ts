@@ -124,6 +124,33 @@ export type Database = {
         }
         Relationships: []
       }
+      email_captures: {
+        Row: {
+          captured_at: string | null
+          country: string | null
+          email: string
+          id: string
+          page_key: string
+          source: string | null
+        }
+        Insert: {
+          captured_at?: string | null
+          country?: string | null
+          email: string
+          id?: string
+          page_key: string
+          source?: string | null
+        }
+        Update: {
+          captured_at?: string | null
+          country?: string | null
+          email?: string
+          id?: string
+          page_key?: string
+          source?: string | null
+        }
+        Relationships: []
+      }
       page_views: {
         Row: {
           blog_id: string | null
@@ -154,6 +181,84 @@ export type Database = {
         }
         Relationships: []
       }
+      pre_landing_pages: {
+        Row: {
+          background_color: string | null
+          background_image_url: string | null
+          created_at: string | null
+          cta_color: string | null
+          cta_text: string | null
+          description: string | null
+          description_align: string | null
+          description_color: string | null
+          description_font_size: number | null
+          headline: string
+          headline_align: string | null
+          headline_color: string | null
+          headline_font_size: number | null
+          id: string
+          image_ratio: string | null
+          is_active: boolean | null
+          logo_position: string | null
+          logo_url: string | null
+          logo_width: number | null
+          main_image_url: string | null
+          page_key: string
+          target_url: string
+          updated_at: string | null
+        }
+        Insert: {
+          background_color?: string | null
+          background_image_url?: string | null
+          created_at?: string | null
+          cta_color?: string | null
+          cta_text?: string | null
+          description?: string | null
+          description_align?: string | null
+          description_color?: string | null
+          description_font_size?: number | null
+          headline: string
+          headline_align?: string | null
+          headline_color?: string | null
+          headline_font_size?: number | null
+          id?: string
+          image_ratio?: string | null
+          is_active?: boolean | null
+          logo_position?: string | null
+          logo_url?: string | null
+          logo_width?: number | null
+          main_image_url?: string | null
+          page_key: string
+          target_url: string
+          updated_at?: string | null
+        }
+        Update: {
+          background_color?: string | null
+          background_image_url?: string | null
+          created_at?: string | null
+          cta_color?: string | null
+          cta_text?: string | null
+          description?: string | null
+          description_align?: string | null
+          description_color?: string | null
+          description_font_size?: number | null
+          headline?: string
+          headline_align?: string | null
+          headline_color?: string | null
+          headline_font_size?: number | null
+          id?: string
+          image_ratio?: string | null
+          is_active?: boolean | null
+          logo_position?: string | null
+          logo_url?: string | null
+          logo_width?: number | null
+          main_image_url?: string | null
+          page_key?: string
+          target_url?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       related_searches: {
         Row: {
           allowed_countries: string[] | null
@@ -163,9 +268,13 @@ export type Database = {
           id: string
           ip_address: string | null
           is_active: boolean
+          position: number | null
+          pre_landing_page_key: string | null
           search_text: string
           session_id: string | null
+          title: string | null
           updated_at: string
+          web_result_page: number | null
         }
         Insert: {
           allowed_countries?: string[] | null
@@ -175,9 +284,13 @@ export type Database = {
           id?: string
           ip_address?: string | null
           is_active?: boolean
+          position?: number | null
+          pre_landing_page_key?: string | null
           search_text: string
           session_id?: string | null
+          title?: string | null
           updated_at?: string
+          web_result_page?: number | null
         }
         Update: {
           allowed_countries?: string[] | null
@@ -187,9 +300,13 @@ export type Database = {
           id?: string
           ip_address?: string | null
           is_active?: boolean
+          position?: number | null
+          pre_landing_page_key?: string | null
           search_text?: string
           session_id?: string | null
+          title?: string | null
           updated_at?: string
+          web_result_page?: number | null
         }
         Relationships: [
           {

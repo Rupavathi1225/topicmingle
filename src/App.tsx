@@ -10,6 +10,7 @@ import Admin from "./pages/Admin";
 import AdminNew from "./pages/AdminNew";
 import RelatedSearchPage from "./pages/RelatedSearchPage";
 import NotFound from "./pages/NotFound";
+import PreLandingPage from "./pages/PreLandingPage";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/dataorbit" element={<AdminNew />} />
           <Route path="/related-search" element={<RelatedSearchPage />} />
+          <Route path="/prelanding" element={<PreLandingPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
