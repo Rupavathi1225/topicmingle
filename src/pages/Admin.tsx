@@ -124,7 +124,7 @@ const Admin = () => {
   const [analytics, setAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
   const [dataOrbitAnalytics, setDataOrbitAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
   const [searchProjectAnalytics, setSearchProjectAnalytics] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'blogs' | 'searches' | 'analytics' | 'dataorbit-analytics' | 'searchproject-analytics' | 'unified-analytics' | 'categories'>('unified-analytics');
+  const [activeTab, setActiveTab] = useState<'blogs' | 'searches' | 'analytics' | 'categories' | 'unified-analytics' | 'dz-analytics' | 'dz-blogs' | 'dz-searches' | 'sp-analytics' | 'sp-webresults' | 'sp-landing'>('unified-analytics');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
   const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
@@ -1071,7 +1071,7 @@ setDataOrbitAnalytics({
               </Dialog>
             )}
 
-            {activeTab === 'dataorbit-analytics' && (
+            {activeTab === 'dz-analytics' && (
               <Button onClick={fetchDataOrbitAnalytics} variant="outline">
                 🔄 Refresh Analytics
               </Button>
@@ -1091,62 +1091,111 @@ setDataOrbitAnalytics({
           >
             🌐 Multi-Site Analytics
           </button>
-          <button
-            onClick={() => setActiveTab('blogs')}
-            className={`px-4 py-2 font-semibold transition-colors ${
-              activeTab === 'blogs'
-                ? 'border-b-2 border-accent text-accent'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Blogs
-          </button>
-          <button
-            onClick={() => setActiveTab('searches')}
-            className={`px-4 py-2 font-semibold transition-colors ${
-              activeTab === 'searches'
-                ? 'border-b-2 border-accent text-accent'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Related Searches
-          </button>
-          <button
-            onClick={() => setActiveTab('analytics')}
-            className={`px-4 py-2 font-semibold transition-colors ${
-              activeTab === 'analytics'
-                ? 'border-b-2 border-accent text-accent'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Analytics
-          </button>
-          <button
-            onClick={() => setActiveTab('dataorbit-analytics')}
-            className={`px-4 py-2 font-semibold transition-colors ${
-              activeTab === 'dataorbit-analytics'
-                ? 'border-b-2 border-accent text-accent'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            DataOrbitZone Analytics
-          </button>
-          <button
-            onClick={() => setActiveTab('searchproject-analytics')}
-            className={`px-4 py-2 font-semibold transition-colors ${
-              activeTab === 'searchproject-analytics'
-                ? 'border-b-2 border-accent text-accent'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            SearchProject Analytics
-          </button>
-          <button
-            onClick={() => window.open('/admin/dataorbit', '_blank')}
-            className="px-4 py-2 font-semibold transition-colors text-muted-foreground hover:text-foreground whitespace-nowrap"
-          >
-            📝 Edit DataOrbitZone & SearchProject
-          </button>
+          
+          {/* TopicMingle Section */}
+          <div className="border-l pl-4 flex gap-2">
+            <span className="text-xs text-muted-foreground self-center font-semibold">TopicMingle:</span>
+            <button
+              onClick={() => setActiveTab('blogs')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'blogs'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Blogs
+            </button>
+            <button
+              onClick={() => setActiveTab('searches')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'searches'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Related Searches
+            </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'analytics'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Analytics
+            </button>
+          </div>
+
+          {/* DataOrbitZone Section */}
+          <div className="border-l pl-4 flex gap-2">
+            <span className="text-xs text-muted-foreground self-center font-semibold">DataOrbitZone:</span>
+            <button
+              onClick={() => setActiveTab('dz-blogs')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'dz-blogs'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Blogs
+            </button>
+            <button
+              onClick={() => setActiveTab('dz-searches')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'dz-searches'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Related Searches
+            </button>
+            <button
+              onClick={() => setActiveTab('dz-analytics')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'dz-analytics'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Analytics
+            </button>
+          </div>
+
+          {/* SearchProject Section */}
+          <div className="border-l pl-4 flex gap-2">
+            <span className="text-xs text-muted-foreground self-center font-semibold">SearchProject:</span>
+            <button
+              onClick={() => setActiveTab('sp-webresults')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'sp-webresults'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Web Results
+            </button>
+            <button
+              onClick={() => setActiveTab('sp-landing')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'sp-landing'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Landing Pages
+            </button>
+            <button
+              onClick={() => setActiveTab('sp-analytics')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'sp-analytics'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Analytics
+            </button>
+          </div>
         </div>
 
         {/* Unified Analytics Dashboard */}
@@ -1474,8 +1523,34 @@ setDataOrbitAnalytics({
           </div>
         )}
 
+        {/* DataOrbitZone Blogs Management */}
+        {activeTab === 'dz-blogs' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">DataOrbitZone Blogs</h2>
+              <Button onClick={() => window.open('/admin/dataorbit', '_blank')} variant="outline">
+                Open Full Manager
+              </Button>
+            </div>
+            <p className="text-muted-foreground">Use the full manager to create/edit DataOrbitZone blogs.</p>
+          </div>
+        )}
+
+        {/* DataOrbitZone Related Searches */}
+        {activeTab === 'dz-searches' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">DataOrbitZone Related Searches</h2>
+              <Button onClick={() => window.open('/admin/dataorbit', '_blank')} variant="outline">
+                Open Full Manager
+              </Button>
+            </div>
+            <p className="text-muted-foreground">Use the full manager to create/edit DataOrbitZone related searches.</p>
+          </div>
+        )}
+
         {/* DataOrbitZone Analytics Dashboard */}
-        {activeTab === 'dataorbit-analytics' && (
+        {activeTab === 'dz-analytics' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-card rounded-lg border p-6">
@@ -1658,8 +1733,34 @@ setDataOrbitAnalytics({
           </div>
         )}
 
+        {/* SearchProject Web Results Management */}
+        {activeTab === 'sp-webresults' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">SearchProject Web Results</h2>
+              <Button onClick={() => window.open('/admin/dataorbit', '_blank')} variant="outline">
+                Open Full Manager
+              </Button>
+            </div>
+            <p className="text-muted-foreground">Use the full manager to create/edit SearchProject web results.</p>
+          </div>
+        )}
+
+        {/* SearchProject Landing Pages */}
+        {activeTab === 'sp-landing' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">SearchProject Landing Pages</h2>
+              <Button onClick={() => window.open('/admin/dataorbit', '_blank')} variant="outline">
+                Open Full Manager
+              </Button>
+            </div>
+            <p className="text-muted-foreground">Use the full manager to create/edit SearchProject landing pages.</p>
+          </div>
+        )}
+
         {/* SearchProject Analytics Dashboard */}
-        {activeTab === 'searchproject-analytics' && (
+        {activeTab === 'sp-analytics' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
               <div className="bg-card rounded-lg border p-6">
