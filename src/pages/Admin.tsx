@@ -141,7 +141,7 @@ const Admin = () => {
   const [analytics, setAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
   const [dataOrbitAnalytics, setDataOrbitAnalytics] = useState<Analytics>({ sessions: 0, page_views: 0, clicks: 0 });
   const [searchProjectAnalytics, setSearchProjectAnalytics] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'blogs' | 'searches' | 'analytics' | 'categories' | 'unified-analytics' | 'dz-analytics' | 'dz-blogs' | 'dz-searches' | 'dz-webresults' | 'dz-prelanding' | 'dz-emails' | 'sp-analytics' | 'sp-webresults' | 'sp-landing' | 'sp-prelanding' | 'sp-emails' | 'tm-prelanding' | 'tm-emails' | 'tm-webresults'>('unified-analytics');
+  const [activeTab, setActiveTab] = useState<'blogs' | 'searches' | 'analytics' | 'categories' | 'unified-analytics' | 'dz-analytics' | 'dz-blogs' | 'dz-searches' | 'dz-webresults' | 'dz-prelanding' | 'dz-emails' | 'sp-analytics' | 'sp-webresults' | 'sp-searches' | 'sp-landing' | 'sp-prelanding' | 'sp-emails' | 'tm-prelanding' | 'tm-emails' | 'tm-webresults'>('unified-analytics');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
   const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
@@ -1304,6 +1304,16 @@ setDataOrbitAnalytics({
               Web Results
             </button>
             <button
+              onClick={() => setActiveTab('sp-searches')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'sp-searches'
+                  ? 'border-b-2 border-accent text-accent'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Related Searches
+            </button>
+            <button
               onClick={() => setActiveTab('sp-landing')}
               className={`px-4 py-2 font-semibold transition-colors ${
                 activeTab === 'sp-landing'
@@ -1859,6 +1869,11 @@ setDataOrbitAnalytics({
         {/* SearchProject Web Results Management */}
         {activeTab === 'sp-webresults' && (
           <WebResultsManager projectClient={searchProjectClient} projectName="SearchProject" />
+        )}
+
+        {/* SearchProject Related Searches Management */}
+        {activeTab === 'sp-searches' && (
+          <RelatedSearchManager projectClient={searchProjectClient} projectName="SearchProject" />
         )}
 
         {/* SearchProject Landing Pages */}
