@@ -49,26 +49,7 @@ export default function AdminNew() {
           <TabsContent value="searchproject" className="space-y-8">
             <div>
               <h2 className="text-2xl font-bold mb-4">SearchProject Management</h2>
-              <Tabs defaultValue="content">
-                <TabsList>
-                  <TabsTrigger value="content">Web Results</TabsTrigger>
-                  <TabsTrigger value="searches">Related Searches</TabsTrigger>
-                  <TabsTrigger value="prelanding">Pre-Landing</TabsTrigger>
-                  <TabsTrigger value="emails">Emails</TabsTrigger>
-                </TabsList>
-                <TabsContent value="content">
-                  <SearchProjectManager />
-                </TabsContent>
-                <TabsContent value="searches">
-                  <RelatedSearchManager projectClient={searchProjectClient} />
-                </TabsContent>
-                <TabsContent value="prelanding">
-                  <PreLandingEditor projectClient={searchProjectClient} projectName="SearchProject" />
-                </TabsContent>
-                <TabsContent value="emails">
-                  <EmailCaptureViewer projectClient={searchProjectClient} />
-                </TabsContent>
-              </Tabs>
+              <SearchProjectManager />
             </div>
           </TabsContent>
           

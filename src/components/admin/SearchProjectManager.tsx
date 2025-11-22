@@ -9,6 +9,9 @@ import { toast } from '@/components/ui/use-toast';
 import { Trash2, Edit2, Plus, Save, X } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RelatedSearchManager } from './RelatedSearchManager';
+import { PreLandingEditor } from './PreLandingEditor';
+import { EmailCaptureViewer } from './EmailCaptureViewer';
 
 interface WebResult {
   id: string;
@@ -55,7 +58,6 @@ export function SearchProjectManager() {
   useEffect(() => {
     if (activeTab === 'webresults') fetchWebResults();
     if (activeTab === 'landing') fetchLandingPages();
-    if (activeTab === 'emails') fetchEmailCaptures();
   }, [activeTab]);
 
   const fetchWebResults = async () => {
@@ -84,18 +86,6 @@ export function SearchProjectManager() {
     }
   };
 
-  const fetchEmailCaptures = async () => {
-    const { data, error } = await searchProjectClient
-      .from('email_captures')
-      .select('*')
-      .order('captured_at', { ascending: false });
-    
-    if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } else {
-      setEmailCaptures(data || []);
-    }
-  };
 
   const handleSaveWebResult = async () => {
     const data = {
@@ -217,7 +207,9 @@ export function SearchProjectManager() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="webresults">Web Results</TabsTrigger>
+          <TabsTrigger value="searches">Related Searches</TabsTrigger>
           <TabsTrigger value="landing">Landing Pages</TabsTrigger>
+          <TabsTrigger value="prelanding">Pre-Landing</TabsTrigger>
           <TabsTrigger value="emails">Email Captures</TabsTrigger>
         </TabsList>
 
@@ -389,25 +381,16 @@ export function SearchProjectManager() {
           </div>
         </TabsContent>
 
-        <TabsContent value="emails" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Email Captures ({emailCaptures.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {emailCaptures.map((capture) => (
-                  <div key={capture.id} className="border-b pb-2 text-sm">
-                    <p><strong>{capture.email}</strong></p>
-                    <p className="text-muted-foreground">
-                      {capture.country} • {capture.device} • {new Date(capture.captured_at).toLocaleString()}
-                    </p>
-                    {capture.redirected_to && <p className="text-xs">→ {capture.redirected_to}</p>}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="searches">
+          <RelatedSearchManager projectClient={searchProjectClient} projectName="SearchProject" />
+        </TabsContent>
+
+        <TabsContent value="prelanding">
+          <PreLandingEditor projectClient={searchProjectClient} projectName="SearchProject" />
+        </TabsContent>
+
+        <TabsContent value="emails">
+          <EmailCaptureViewer projectClient={searchProjectClient} />
         </TabsContent>
       </Tabs>
     </div>
