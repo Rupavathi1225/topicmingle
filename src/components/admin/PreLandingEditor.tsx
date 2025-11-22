@@ -82,13 +82,29 @@ export const PreLandingEditor = ({ projectClient, projectName }: PreLandingEdito
   }, [selectedSearchId, searches]);
 
   const fetchSearches = async () => {
-    const { data } = await projectClient
-      .from('related_searches')
-      .select('*')
-      .order('web_result_page', { ascending: true })
-      .order('position', { ascending: true });
-    
-    if (data) setSearches(data);
+    try {
+      const { data, error } = await projectClient
+        .from('related_searches')
+        .select('*')
+        .eq('is_active', true)
+        .order('web_result_page', { ascending: true })
+        .order('position', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching searches:', error);
+        toast.error('Failed to fetch related searches. Make sure the database is set up correctly.');
+        return;
+      }
+      
+      if (data && data.length > 0) {
+        setSearches(data);
+      } else {
+        toast.info('No related searches found. Please create some first in the Related Searches tab.');
+      }
+    } catch (err: any) {
+      console.error('Error:', err);
+      toast.error('Failed to connect to database: ' + err.message);
+    }
   };
 
   const loadPreLandingPage = async (pageKey: string) => {
@@ -193,11 +209,17 @@ export const PreLandingEditor = ({ projectClient, projectName }: PreLandingEdito
                 <SelectValue placeholder="Choose a related search" />
               </SelectTrigger>
               <SelectContent>
-                {searches.map((search) => (
-                  <SelectItem key={search.id} value={search.id}>
-                    {search.title || search.search_text} (WR-{search.web_result_page}, Pos-{search.position})
+                {searches.length === 0 ? (
+                  <SelectItem value="no-searches" disabled>
+                    No related searches found - create some first
                   </SelectItem>
-                ))}
+                ) : (
+                  searches.map((search) => (
+                    <SelectItem key={search.id} value={search.id}>
+                      {search.title || search.search_text} (WR-{search.web_result_page}, Pos-{search.position})
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
