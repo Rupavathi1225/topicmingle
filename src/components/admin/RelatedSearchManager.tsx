@@ -44,28 +44,48 @@ export const RelatedSearchManager = ({ projectClient, categoryId, projectName }:
   }, [categoryId]);
 
   const fetchSearches = async () => {
-    let query = projectClient.from('related_searches').select('*');
-    
-    if (categoryId) {
-      query = query.eq('category_id', categoryId);
-    }
-    
-    // For TopicMingle, show latest first; for others, show by display_order
-    if (projectName === 'TopicMingle') {
-      const { data } = await query.order('created_at', { ascending: false });
+    try {
+      let query = projectClient.from('related_searches').select('*');
+      
+      if (categoryId) {
+        query = query.eq('category_id', categoryId);
+      }
+
+      // Use a simple, broadly compatible ordering
+      const { data, error } = await query.order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching related searches:', error);
+        toast.error('Failed to load related searches');
+        return;
+      }
+
       if (data) setSearches(data);
-    } else {
-      const { data } = await query.order('display_order', { ascending: true });
-      if (data) setSearches(data);
+    } catch (err: any) {
+      console.error('Unexpected error fetching related searches:', err);
+      toast.error('Failed to load related searches');
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    const basePayload: any = {
+      title: formData.title,
+      search_text: formData.search_text,
+      web_result_page: formData.web_result_page,
+      position: formData.position,
+      pre_landing_page_key: formData.pre_landing_page_key || null,
+    };
+
     const payload = {
-      ...formData,
+      ...basePayload,
       ...(categoryId && { category_id: categoryId }),
+      ...(projectName === 'TopicMingle' && {
+        is_active: formData.is_active,
+        display_order: formData.display_order,
+        allowed_countries: formData.allowed_countries,
+      }),
     };
 
     if (editingSearch) {
@@ -75,6 +95,7 @@ export const RelatedSearchManager = ({ projectClient, categoryId, projectName }:
         .eq('id', editingSearch.id);
       
       if (error) {
+        console.error('Failed to update search:', error);
         toast.error('Failed to update search');
       } else {
         toast.success('Search updated successfully');
@@ -88,6 +109,7 @@ export const RelatedSearchManager = ({ projectClient, categoryId, projectName }:
         .insert([payload]);
       
       if (error) {
+        console.error('Failed to create search:', error);
         toast.error('Failed to create search');
       } else {
         toast.success('Search created successfully');
