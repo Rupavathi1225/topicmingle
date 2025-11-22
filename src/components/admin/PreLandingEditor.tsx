@@ -86,13 +86,12 @@ export const PreLandingEditor = ({ projectClient, projectName }: PreLandingEdito
       const { data, error } = await projectClient
         .from('related_searches')
         .select('*')
-        .eq('is_active', true)
         .order('web_result_page', { ascending: true })
         .order('position', { ascending: true });
       
       if (error) {
         console.error('Error fetching searches:', error);
-        toast.error('Failed to fetch related searches. Make sure the database is set up correctly.');
+        toast.error('Failed to fetch related searches. Please check the external database setup.');
         return;
       }
       
